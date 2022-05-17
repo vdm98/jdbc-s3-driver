@@ -1,9 +1,8 @@
-package systems.cauldron.drivers.lake;
+package ru.sbt.sup.jdbc;
 
-import systems.cauldron.drivers.lake.adapter.LakeSchemaFactory;
-import systems.cauldron.drivers.lake.config.TableSpec;
-import systems.cauldron.drivers.lake.scan.LakeS3SelectWhereScan;
-import systems.cauldron.drivers.lake.scan.LakeScan;
+import ru.sbt.sup.jdbc.adapter.LakeSchemaFactory;
+import ru.sbt.sup.jdbc.config.TableSpec;
+import ru.sbt.sup.jdbc.scan.LakeS3SelectWhereScan;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -15,7 +14,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class LakeDriver {
-
     static {
         try {
             Class.forName("org.apache.calcite.jdbc.Driver");
@@ -24,20 +22,13 @@ public class LakeDriver {
         }
     }
 
-    public static Connection getConnection(List<TableSpec> tables) throws SQLException {
-        return getConnection(tables, LakeS3SelectWhereScan.class);
-    }
-
-    public static Connection getConnection(List<TableSpec> tables, Class<? extends LakeScan> scanClass) throws SQLException {
-
+    public static Connection getConnection(List<TableSpec> tables, Class<LakeS3SelectWhereScan> scanClass) throws SQLException {
         JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
         tables.stream().map(TableSpec::toJson).forEach(jsonArrayBuilder::add);
         JsonArray build = jsonArrayBuilder.build();
         String tableSpecificationsString = build.toString();
-
         String schemaFactoryName = LakeSchemaFactory.class.getName();
         String scanClassName = scanClass.getName();
-
         JsonObject modelJson = Json.createObjectBuilder()
                 .add("version", "1.0")
                 .add("defaultSchema", "default")
@@ -50,8 +41,6 @@ public class LakeDriver {
                                         .add("scan", scanClassName)
                                         .add("inputs", tableSpecificationsString))))
                 .build();
-
         return DriverManager.getConnection("jdbc:calcite:model=inline:" + modelJson);
     }
-
 }

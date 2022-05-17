@@ -1,4 +1,4 @@
-package systems.cauldron.drivers.lake.config;
+package ru.sbt.sup.jdbc.config;
 
 import javax.json.Json;
 import javax.json.JsonObject;

@@ -1,4 +1,4 @@
-package systems.cauldron.drivers.lake.adapter;
+package ru.sbt.sup.jdbc.adapter;
 
 import org.apache.calcite.DataContext;
 import org.apache.calcite.linq4j.AbstractEnumerable;
@@ -9,27 +9,24 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.ProjectableFilterableTable;
 import org.apache.calcite.schema.impl.AbstractTable;
-import systems.cauldron.drivers.lake.config.ColumnSpec;
-import systems.cauldron.drivers.lake.config.TableSpec;
-import systems.cauldron.drivers.lake.parser.CsvInputStreamParser;
-import systems.cauldron.drivers.lake.scan.LakeScan;
-import systems.cauldron.drivers.lake.scan.LakeScanner;
+import ru.sbt.sup.jdbc.config.ColumnSpec;
+import ru.sbt.sup.jdbc.config.TableSpec;
+import ru.sbt.sup.jdbc.config.TypeSpec;
+import ru.sbt.sup.jdbc.scan.LakeS3SelectWhereScan;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
-
 public class LakeTable extends AbstractTable implements ProjectableFilterableTable {
-
+    private final TableSpec spec;
     private final ColumnSpec[] columns;
-    private final LakeScanner scanner;
     private final int[] defaultProjects;
 
     LakeTable(Class<?> scanClass, TableSpec spec) {
         this.columns = spec.columns.toArray(new ColumnSpec[0]);
-        this.scanner = LakeScanner.create(scanClass, spec);
+        this.spec = spec;
         this.defaultProjects = IntStream.range(0, columns.length).toArray();
     }
 
@@ -46,12 +43,10 @@ public class LakeTable extends AbstractTable implements ProjectableFilterableTab
 
     @Override
     public Enumerable<Object[]> scan(DataContext root, List<RexNode> filters, int[] projects) {
-        //TODO: understand how Calcite works here and optimize
-
         final AtomicBoolean cancelFlag = DataContext.Variable.CANCEL_FLAG.get(root);
         projects = (projects == null) ? defaultProjects : projects;
-        final LakeScan scan = scanner.apply(projects, filters);
-
+        TypeSpec[] fields = spec.columns.stream().map(c -> c.datatype).toArray(TypeSpec[]::new);
+        LakeS3SelectWhereScan scan = new LakeS3SelectWhereScan(spec.location, spec.format, fields, projects, filters);
         return new AbstractEnumerable<>() {
 
             public Enumerator<Object[]> enumerator() {
@@ -59,16 +54,19 @@ public class LakeTable extends AbstractTable implements ProjectableFilterableTab
                 CsvInputStreamParser parser = new CsvInputStreamParser(
                         scan.getFormat(),
                         scan.getRowConverter(),
-                        scan.getSource());
+                        scan.getResult());
 
                 return new Enumerator<>() {
-
                     private Object[] current;
-
                     public Object[] current() {
                         return current;
                     }
-
+                    public void reset() {
+                        throw new UnsupportedOperationException();
+                    }
+                    public void close() {
+                        parser.close();
+                    }
                     public boolean moveNext() {
                         if (cancelFlag.get()) {
                             return false;
@@ -81,19 +79,53 @@ public class LakeTable extends AbstractTable implements ProjectableFilterableTab
                         current = result.get();
                         return true;
                     }
-
-                    public void reset() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    public void close() {
-                        parser.close();
-                    }
-
                 };
             }
 
         };
     }
 
+
+//    @Override
+//    public Enumerable<Object[]> scan(DataContext root, List<RexNode> filters, int[] projects) {
+//        final AtomicBoolean cancelFlag = DataContext.Variable.CANCEL_FLAG.get(root);
+//        projects = (projects == null) ? defaultProjects : projects;
+//        TypeSpec[] fields = spec.columns.stream().map(c -> c.datatype).toArray(TypeSpec[]::new);
+//        LakeS3SelectWhereScan scan = new LakeS3SelectWhereScan(spec.location, spec.format, fields, projects, filters);
+//        return new AbstractEnumerable<>() {
+//
+//            public Enumerator<Object[]> enumerator() {
+//                CsvInputStreamParser parser = new CsvInputStreamParser(
+//                        scan.getFormat(),
+//                        scan.getRowConverter(),
+//                        scan.getResult());
+//
+//                return new Enumerator<>() {
+//                    private Object[] current;
+//                    public Object[] current() {
+//                        return current;
+//                    }
+//                    public void reset() {
+//                        throw new UnsupportedOperationException();
+//                    }
+//                    public void close() {
+//                        parser.close();
+//                    }
+//                    public boolean moveNext() {
+//                        if (cancelFlag.get()) {
+//                            return false;
+//                        }
+//                        Optional<Object[]> result = parser.parseRecord();
+//                        if (result.isEmpty()) {
+//                            current = null;
+//                            return false;
+//                        }
+//                        current = result.get();
+//                        return true;
+//                    }
+//                };
+//            }
+//
+//        };
+//    }
 }

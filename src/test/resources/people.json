@@ -1,6 +1,6 @@
 {
   "label": "people",
-  "location": "s3://build.cauldron.tools/people",
+  "location": "s3://222/people.csv",
   "format": {
     "delimiter": ",",
     "lineSeparator": "\n",

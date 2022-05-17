@@ -1,6 +1,6 @@
-package systems.cauldron.drivers.lake.converter;
+package ru.sbt.sup.jdbc.scan;
 
-import systems.cauldron.drivers.lake.config.TypeSpec;
+import ru.sbt.sup.jdbc.config.TypeSpec;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -9,9 +9,13 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
-public abstract class RowConverter {
+public class ProjectedRowConverter {
 
-    public abstract Object[] convertRow(String[] values);
+    private final TypeSpec[] projectedFieldTypes;
+
+    public ProjectedRowConverter(TypeSpec[] projectedFieldTypes) {
+        this.projectedFieldTypes = projectedFieldTypes;
+    }
 
     static Object convertField(TypeSpec type, String value) throws NumberFormatException, DateTimeParseException {
         switch (type) {
@@ -48,5 +52,17 @@ public abstract class RowConverter {
             default:
                 throw new IllegalArgumentException("invalid field type: " + type);
         }
+    }
+
+    public Object[] convertRow(String[] values) {
+        final Object[] result = new Object[projectedFieldTypes.length];
+        for (int i = 0; i < projectedFieldTypes.length; i++) {
+            String value = values[i];
+            if (value != null) {
+                TypeSpec type = projectedFieldTypes[i];
+                result[i] = convertField(type, value);
+            }
+        }
+        return result;
     }
 }

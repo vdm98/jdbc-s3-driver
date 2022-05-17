@@ -1,9 +1,16 @@
-package systems.cauldron.drivers.lake.config;
+package ru.sbt.sup.jdbc.config;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
+import javax.json.JsonReader;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,6 +47,21 @@ public class TableSpec {
                 .add("format", format.toJson())
                 .add("columns", columnsJson)
                 .build();
+    }
+
+    public static List<TableSpec> generateTableSpecifications(String... keys) {
+        List<TableSpec> builder = new ArrayList<>();
+        for (String tableName : keys) {
+            Path inputConfig = Paths.get("src", "test", "resources", tableName + ".json");
+            try (JsonReader reader = Json.createReader(Files.newBufferedReader(inputConfig, StandardCharsets.UTF_8))) {
+                JsonObject jsonObject = reader.readObject();
+                TableSpec spec = new TableSpec(jsonObject);
+                builder.add(spec);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return builder;
     }
 
 }

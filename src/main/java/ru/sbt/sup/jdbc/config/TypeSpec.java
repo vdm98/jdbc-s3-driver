@@ -1,4 +1,4 @@
-package systems.cauldron.drivers.lake.config;
+package ru.sbt.sup.jdbc.config;
 
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;

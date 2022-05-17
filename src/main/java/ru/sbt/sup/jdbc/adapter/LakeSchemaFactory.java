@@ -1,11 +1,11 @@
-package systems.cauldron.drivers.lake.adapter;
+package ru.sbt.sup.jdbc.adapter;
 
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaFactory;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractSchema;
-import systems.cauldron.drivers.lake.config.TableSpec;
+import ru.sbt.sup.jdbc.config.TableSpec;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -17,18 +17,14 @@ import java.util.stream.Collectors;
 
 public class LakeSchemaFactory implements SchemaFactory {
 
-    //Calcite SchemaFactory requirement
     public static final LakeSchemaFactory INSTANCE = new LakeSchemaFactory();
-
-    //Calcite SchemaFactory requirement
-    public LakeSchemaFactory() {
-    }
+    public LakeSchemaFactory() {}
 
     @Override
     public Schema create(SchemaPlus parentSchema, String name, Map<String, Object> operand) {
 
         return new AbstractSchema() {
-
+            private Map<String, Table> tableMap = null;
             @Override
             public boolean isMutable() {
                 return false;
@@ -36,21 +32,19 @@ public class LakeSchemaFactory implements SchemaFactory {
 
             @Override
             protected Map<String, Table> getTableMap() {
-
+                // workaround to prevent multiple scanner class creation
+                if (tableMap != null) return tableMap;
                 Class<?> scanClass = extractScanOperand(operand);
                 JsonArray inputTables = extractInputsOperand(operand);
-
-                return inputTables.stream()
+                tableMap = inputTables.stream()
                         .map(v -> (JsonObject) v)
                         .map(TableSpec::new)
                         .collect(Collectors.toMap(
                                 spec -> spec.label.toUpperCase(),
                                 spec -> new LakeTable(scanClass, spec)));
-
+                return tableMap;
             }
-
         };
-
     }
 
     private Class<?> extractScanOperand(Map<String, Object> operand) {

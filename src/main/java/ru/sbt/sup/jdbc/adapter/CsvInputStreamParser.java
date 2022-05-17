@@ -1,10 +1,10 @@
-package systems.cauldron.drivers.lake.parser;
+package ru.sbt.sup.jdbc.adapter;
 
 import com.univocity.parsers.csv.CsvFormat;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
-import systems.cauldron.drivers.lake.config.FormatSpec;
-import systems.cauldron.drivers.lake.converter.RowConverter;
+import ru.sbt.sup.jdbc.config.FormatSpec;
+import ru.sbt.sup.jdbc.scan.ProjectedRowConverter;
 
 import java.io.Closeable;
 import java.io.InputStream;
@@ -14,22 +14,18 @@ import java.util.Optional;
 public class CsvInputStreamParser implements Closeable {
 
     private final CsvParser parser;
-    private final RowConverter converter;
+    private final ProjectedRowConverter converter;
 
-    public CsvInputStreamParser(FormatSpec spec, RowConverter converter, InputStream inputStream) {
-
+    public CsvInputStreamParser(FormatSpec spec, ProjectedRowConverter converter, InputStream inputStream) {
         CsvFormat format = new CsvFormat();
         format.setDelimiter(spec.delimiter);
         format.setLineSeparator(spec.lineSeparator);
         format.setQuote(spec.quoteChar);
         format.setQuoteEscape(spec.escape);
-
         CsvParserSettings parserSettings = new CsvParserSettings();
         parserSettings.setFormat(format);
         parserSettings.setHeaderExtractionEnabled(spec.header);
-
         this.converter = converter;
-
         this.parser = new CsvParser(parserSettings);
         this.parser.beginParsing(inputStream, StandardCharsets.UTF_8);
     }
