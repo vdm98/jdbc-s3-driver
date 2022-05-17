@@ -1,7 +1,7 @@
 package ru.sbt.sup.jdbc;
 
 import ru.sbt.sup.jdbc.config.TableSpec;
-import ru.sbt.sup.jdbc.scan.LakeS3SelectWhereScan;
+import ru.sbt.sup.jdbc.adapter.LakeS3Adapter;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ public class Client {
 
     private static String getResult(List<TableSpec> tableSpecs, String sqlScript) {
         StringBuffer result = new StringBuffer();
-        try (Connection connection = LakeDriver.getConnection(tableSpecs, LakeS3SelectWhereScan.class)) {
+        try (Connection connection = LakeDriver.getConnection(tableSpecs, LakeS3Adapter.class)) {
             try (PreparedStatement statement = connection.prepareStatement(sqlScript)) {
                 ResultSetMetaData metaData = statement.getMetaData();
                 int limit = metaData.getColumnCount();

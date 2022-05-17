@@ -1,4 +1,4 @@
-package ru.sbt.sup.jdbc.scan;
+package ru.sbt.sup.jdbc.adapter;
 
 import ru.sbt.sup.jdbc.config.TypeSpec;
 
@@ -9,11 +9,11 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
-public class ProjectedRowConverter {
+public class RowConverter {
 
     private final TypeSpec[] projectedFieldTypes;
 
-    public ProjectedRowConverter(TypeSpec[] projectedFieldTypes) {
+    public RowConverter(TypeSpec[] projectedFieldTypes) {
         this.projectedFieldTypes = projectedFieldTypes;
     }
 

@@ -4,7 +4,6 @@ import com.univocity.parsers.csv.CsvFormat;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 import ru.sbt.sup.jdbc.config.FormatSpec;
-import ru.sbt.sup.jdbc.scan.ProjectedRowConverter;
 
 import java.io.Closeable;
 import java.io.InputStream;
@@ -14,9 +13,9 @@ import java.util.Optional;
 public class CsvInputStreamParser implements Closeable {
 
     private final CsvParser parser;
-    private final ProjectedRowConverter converter;
+    private final RowConverter converter;
 
-    public CsvInputStreamParser(FormatSpec spec, ProjectedRowConverter converter, InputStream inputStream) {
+    public CsvInputStreamParser(FormatSpec spec, RowConverter converter, InputStream inputStream) {
         CsvFormat format = new CsvFormat();
         format.setDelimiter(spec.delimiter);
         format.setLineSeparator(spec.lineSeparator);

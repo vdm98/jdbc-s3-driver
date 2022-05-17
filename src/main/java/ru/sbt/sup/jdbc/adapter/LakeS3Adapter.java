@@ -1,4 +1,4 @@
-package ru.sbt.sup.jdbc.scan;
+package ru.sbt.sup.jdbc.adapter;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -15,7 +15,6 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
-import ru.sbt.sup.jdbc.adapter.CalciteUtils;
 import ru.sbt.sup.jdbc.config.FormatSpec;
 import ru.sbt.sup.jdbc.config.TypeSpec;
 
@@ -29,7 +28,7 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.calcite.sql.SqlKind.INPUT_REF;
 import static org.apache.calcite.sql.SqlKind.LITERAL;
 
-public class LakeS3SelectWhereScan {
+public class LakeS3Adapter {
     private String query;
     private FormatSpec format;
     private TypeSpec[] types;
@@ -37,7 +36,7 @@ public class LakeS3SelectWhereScan {
     private AmazonS3URI s3Source;
     private AmazonS3 s3Client;
 
-    public LakeS3SelectWhereScan(URI source, FormatSpec format, TypeSpec[] types, int[] projects, List<RexNode> filters) {
+    public LakeS3Adapter(URI source, FormatSpec format, TypeSpec[] types, int[] projects, List<RexNode> filters) {
         if (filters.size()>0){
             System.out.println();
             System.out.println("Filter size= " + filters.size());
@@ -196,11 +195,11 @@ public class LakeS3SelectWhereScan {
         return String.format("SELECT %s FROM S3Object", selectList);
     }
 
-    public ProjectedRowConverter getRowConverter() {
+    public RowConverter getRowConverter() {
         TypeSpec[] projectedTypes = IntStream.of(projects).boxed()
                 .map(i -> types[i])
                 .toArray(TypeSpec[]::new);
-        return new ProjectedRowConverter(projectedTypes);
+        return new RowConverter(projectedTypes);
     }
 
     public InputStream getResult() {

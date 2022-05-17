@@ -2,7 +2,7 @@ package ru.sbt.sup.jdbc;
 
 import ru.sbt.sup.jdbc.adapter.LakeSchemaFactory;
 import ru.sbt.sup.jdbc.config.TableSpec;
-import ru.sbt.sup.jdbc.scan.LakeS3SelectWhereScan;
+import ru.sbt.sup.jdbc.adapter.LakeS3Adapter;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -22,7 +22,7 @@ public class LakeDriver {
         }
     }
 
-    public static Connection getConnection(List<TableSpec> tables, Class<LakeS3SelectWhereScan> scanClass) throws SQLException {
+    public static Connection getConnection(List<TableSpec> tables, Class<LakeS3Adapter> scanClass) throws SQLException {
         JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
         tables.stream().map(TableSpec::toJson).forEach(jsonArrayBuilder::add);
         JsonArray build = jsonArrayBuilder.build();

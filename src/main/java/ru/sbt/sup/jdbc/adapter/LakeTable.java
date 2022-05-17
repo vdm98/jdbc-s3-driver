@@ -12,7 +12,6 @@ import org.apache.calcite.schema.impl.AbstractTable;
 import ru.sbt.sup.jdbc.config.ColumnSpec;
 import ru.sbt.sup.jdbc.config.TableSpec;
 import ru.sbt.sup.jdbc.config.TypeSpec;
-import ru.sbt.sup.jdbc.scan.LakeS3SelectWhereScan;
 
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +45,7 @@ public class LakeTable extends AbstractTable implements ProjectableFilterableTab
         final AtomicBoolean cancelFlag = DataContext.Variable.CANCEL_FLAG.get(root);
         projects = (projects == null) ? defaultProjects : projects;
         TypeSpec[] fields = spec.columns.stream().map(c -> c.datatype).toArray(TypeSpec[]::new);
-        LakeS3SelectWhereScan scan = new LakeS3SelectWhereScan(spec.location, spec.format, fields, projects, filters);
+        LakeS3Adapter scan = new LakeS3Adapter(spec.location, spec.format, fields, projects, filters);
         return new AbstractEnumerable<>() {
 
             public Enumerator<Object[]> enumerator() {
@@ -84,48 +83,4 @@ public class LakeTable extends AbstractTable implements ProjectableFilterableTab
 
         };
     }
-
-
-//    @Override
-//    public Enumerable<Object[]> scan(DataContext root, List<RexNode> filters, int[] projects) {
-//        final AtomicBoolean cancelFlag = DataContext.Variable.CANCEL_FLAG.get(root);
-//        projects = (projects == null) ? defaultProjects : projects;
-//        TypeSpec[] fields = spec.columns.stream().map(c -> c.datatype).toArray(TypeSpec[]::new);
-//        LakeS3SelectWhereScan scan = new LakeS3SelectWhereScan(spec.location, spec.format, fields, projects, filters);
-//        return new AbstractEnumerable<>() {
-//
-//            public Enumerator<Object[]> enumerator() {
-//                CsvInputStreamParser parser = new CsvInputStreamParser(
-//                        scan.getFormat(),
-//                        scan.getRowConverter(),
-//                        scan.getResult());
-//
-//                return new Enumerator<>() {
-//                    private Object[] current;
-//                    public Object[] current() {
-//                        return current;
-//                    }
-//                    public void reset() {
-//                        throw new UnsupportedOperationException();
-//                    }
-//                    public void close() {
-//                        parser.close();
-//                    }
-//                    public boolean moveNext() {
-//                        if (cancelFlag.get()) {
-//                            return false;
-//                        }
-//                        Optional<Object[]> result = parser.parseRecord();
-//                        if (result.isEmpty()) {
-//                            current = null;
-//                            return false;
-//                        }
-//                        current = result.get();
-//                        return true;
-//                    }
-//                };
-//            }
-//
-//        };
-//    }
 }
