@@ -39,7 +39,7 @@ public class CalciteUtils {
         switch (sqlTypeName) {
             case CHAR:
             case VARCHAR:
-                return ((NlsString) point).getValue();
+                return "'"+((NlsString) point).getValue()+"'";
             default:
                 return point;
         }

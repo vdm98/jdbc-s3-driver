@@ -31,11 +31,13 @@ public class Client {
 //            "and (relationships.predicate_id = 'has_friend' " +
 //            "and people.firstname like 'aa%')";
 
-//            "select id, firstname, lastname from people where id=1 and (firstname='aa' or firstname='bb')";
+//            "select id, firstname, lastname from people where id=1 or firstname='aaa' or firstname='bbb'";
+             "select id, firstname, lastname from people where id=1 or firstname='bbb' or firstname='ccc'";
+
 //            "select id, firstname, lastname from people where id=1 or firstname in ('aa','bb')";
 //            "select id, firstname, lastname from people where id=1 and firstname='aa'";
 //            "select id, firstname, lastname from people where id in (1,5)";// or firstname='bbb' or lastname='CCC'";
-           "select id, firstname, lastname from people";// where firstname='bb'";
+//           "select id, firstname, lastname from people";// where firstname='bb'";
  //             "select * from people where not id > 2";
 //            "select max(relationships.subject_person_id) from relationships";
 //            "select sum(people.id) from people";

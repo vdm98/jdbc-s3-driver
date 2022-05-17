@@ -209,7 +209,6 @@ public class LakeS3Adapter {
         request.setBucketName(s3Source.getBucket());
         request.setKey(s3Source.getKey());
         request.setExpression(query);
-        //request.setExpression("SELECT * FROM S3Object");
         //request.setExpression("select * from S3Object[*][*] s"); // <-- working example on people.json aws
         request.setExpressionType(ExpressionType.SQL);
         request.setInputSerialization(getInputSerialization(format));
@@ -274,9 +273,5 @@ public class LakeS3Adapter {
         return outputSerialization;
     }
 
-    public FormatSpec getFormat() {
-        return format;
-    }
-
-
+    public FormatSpec getFormat() { return format; }
 }
