@@ -9,12 +9,6 @@ public class ColumnSpec {
     public final TypeSpec datatype;
     public final Boolean nullable;
 
-    public ColumnSpec(String label, TypeSpec datatype, Boolean nullable) {
-        this.label = label;
-        this.datatype = datatype;
-        this.nullable = nullable;
-    }
-
     ColumnSpec(JsonObject object) {
         this.label = object.getString("label");
         this.datatype = TypeSpec.of(object.getString("datatype"));

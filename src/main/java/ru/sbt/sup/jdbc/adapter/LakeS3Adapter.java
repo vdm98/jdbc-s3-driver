@@ -15,6 +15,9 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import ru.sbt.sup.jdbc.Client;
 import ru.sbt.sup.jdbc.config.FormatSpec;
 import ru.sbt.sup.jdbc.config.TypeSpec;
 
@@ -29,6 +32,9 @@ import static org.apache.calcite.sql.SqlKind.INPUT_REF;
 import static org.apache.calcite.sql.SqlKind.LITERAL;
 
 public class LakeS3Adapter {
+
+    private static final Logger logger = LogManager.getLogger(Client.class);
+
     private String query;
     private FormatSpec format;
     private TypeSpec[] types;
@@ -36,20 +42,19 @@ public class LakeS3Adapter {
     private AmazonS3URI s3Source;
     private AmazonS3 s3Client;
 
-    public LakeS3Adapter(URI source, FormatSpec format, TypeSpec[] types, int[] projects, List<RexNode> filters) {
+    public LakeS3Adapter(AmazonS3 s3Client, AmazonS3URI s3Source, FormatSpec format, TypeSpec[] types, int[] projects, List<RexNode> filters) {
         if (filters.size()>0){
-            System.out.println();
-            System.out.println("Filter size= " + filters.size());
-            System.out.println("Filter [0]= " + filters.get(0).toString());
+            logger.info("\nFilter size= " + filters.size()+"\nFilter [0]= " + filters.get(0).toString());
         }
         this.format = format;
         this.types = types;
         this.projects = projects;
-        this.s3Source = new AmazonS3URI(source);
-        this.s3Client = s3Client();
+        //this.s3Source = new AmazonS3URI(source);
+        //this.s3Client = s3Client();
+        this.s3Source = s3Source;
+        this.s3Client = s3Client;
         this.query = compileQuery(projects, filters);
-        System.out.println("S3 Query= " + query);
-        System.out.println();
+        logger.info("S3 Query= " + query + "\n");
     }
 
     public String compileQuery(int[] projects, List<RexNode> filters) {
@@ -99,7 +104,6 @@ public class LakeS3Adapter {
         }
     }
 
-
     private static Optional<String> tryFilterConversion(RexNode node) {
         RexCall call = (RexCall) node;
         switch (call.getKind()) {
@@ -125,8 +129,6 @@ public class LakeS3Adapter {
                 return Optional.empty();
         }
     }
-
-
 
     private static Optional<String> tryOperatorFilterConversion(String op, RexCall call) {
         List<RexNode> operands = call.getOperands();
@@ -207,10 +209,8 @@ public class LakeS3Adapter {
         request.setBucketName(s3Source.getBucket());
         request.setKey(s3Source.getKey());
         request.setExpression(query);
-        //request.setExpression("SELECT s.firstname as ff FROM S3Object s");
         //request.setExpression("SELECT * FROM S3Object");
         //request.setExpression("select * from S3Object[*][*] s"); // <-- working example on people.json aws
-        //request.setExpression("SELECT s.id FROM S3Object s"); // <-- invalid kaypath
         request.setExpressionType(ExpressionType.SQL);
         request.setInputSerialization(getInputSerialization(format));
         //request.setInputSerialization(getJsonInputSerialization(format));
@@ -218,7 +218,7 @@ public class LakeS3Adapter {
         SelectObjectContentResult result = s3Client.selectObjectContent(request);
         SelectObjectContentEventStream payload = result.getPayload();
 //        try {
-//            System.out.println("inputstream result= " + new String(payload.getRecordsInputStream().readAllBytes()));
+//            logger.info("inputstream result= " + new String(payload.getRecordsInputStream().readAllBytes()));
 //            System.exit(0);
 //        } catch (Exception e){
 //            e.printStackTrace();
@@ -278,19 +278,5 @@ public class LakeS3Adapter {
         return format;
     }
 
-    public static AmazonS3 s3Client() {
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials("XCIA0YKIXGWUGYOKQ1V1", "+Rp8auCBwsKahsEDMtmfvTNELaz+pIjIYw5POwOs");
-        AwsClientBuilder.EndpointConfiguration endpoint =
-                new AwsClientBuilder.EndpointConfiguration("http://127.0.0.1:9000", "ru-1");
 
-//        BasicAWSCredentials awsCreds = new BasicAWSCredentials("AKIATI75LEYBG2IF7LJW", "LwZjCOMDb9VKwi7T0vHstkC+qj3vWx5n1ZqfLGd5");
-//        AwsClientBuilder.EndpointConfiguration endpoint =
-//                new AwsClientBuilder.EndpointConfiguration("https://s3.amazonaws.com:443", "us-east-1");
-
-        return AmazonS3ClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-                .withEndpointConfiguration(endpoint)
-                .withPathStyleAccessEnabled(true)
-                .build();
-    }
 }

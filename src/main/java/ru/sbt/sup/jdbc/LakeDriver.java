@@ -1,9 +1,8 @@
 package ru.sbt.sup.jdbc;
 
 import ru.sbt.sup.jdbc.adapter.LakeSchemaFactory;
+import ru.sbt.sup.jdbc.config.ConnSpec;
 import ru.sbt.sup.jdbc.config.TableSpec;
-import ru.sbt.sup.jdbc.adapter.LakeS3Adapter;
-
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
@@ -22,13 +21,12 @@ public class LakeDriver {
         }
     }
 
-    public static Connection getConnection(List<TableSpec> tables, Class<LakeS3Adapter> scanClass) throws SQLException {
+    public static Connection getConnection(ConnSpec connSpec, List<TableSpec> tables) throws SQLException {
         JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
         tables.stream().map(TableSpec::toJson).forEach(jsonArrayBuilder::add);
         JsonArray build = jsonArrayBuilder.build();
-        String tableSpecificationsString = build.toString();
+        String tableSpecs = build.toString();
         String schemaFactoryName = LakeSchemaFactory.class.getName();
-        String scanClassName = scanClass.getName();
         JsonObject modelJson = Json.createObjectBuilder()
                 .add("version", "1.0")
                 .add("defaultSchema", "default")
@@ -38,8 +36,8 @@ public class LakeDriver {
                                 .add("type", "custom")
                                 .add("factory", schemaFactoryName)
                                 .add("operand", Json.createObjectBuilder()
-                                        .add("scan", scanClassName)
-                                        .add("inputs", tableSpecificationsString))))
+                                        .add("connSpec", connSpec.toJson().toString())
+                                        .add("inputs", tableSpecs))))
                 .build();
         return DriverManager.getConnection("jdbc:calcite:model=inline:" + modelJson);
     }
