@@ -71,7 +71,5 @@ public class FormatSpec {
                 .add("nullFieldIndicator", nullFieldIndicator.name().toLowerCase())
                 .add("compression", compression.name().toLowerCase())
                 .build();
-
     }
-
 }

@@ -24,21 +24,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class JdbcDriverTest {
 
     private static Stream<Arguments> inputProvider() {
+        List<TableSpec> peopleTableSpec = TableSpec.generateTableSpecifications("people");
         return Stream.of(
                 Arguments.of(
-                        "select id, firstname, lastname from people where id=1",
-                        TableSpec.generateTableSpecifications("people"),
+                        "select id, firstname, lastname from people where id=1", peopleTableSpec,
                         "1,aaa,AAA\n"
                 ),
                 Arguments.of(
-                        "select id, firstname, lastname from people where id=1 or firstname='bbb' or firstname='ccc'",
-                        TableSpec.generateTableSpecifications("people"),
+                        "select id, firstname, lastname from people where id=1 or firstname='bbb' or firstname='ccc'", peopleTableSpec,
                         "1,aaa,AAA\n2,bbb,BBB\n3,ccc,CCC\n"
                 ),
                 Arguments.of(
-                        "select * from people where id in (2,3)",
-                        TableSpec.generateTableSpecifications("people"),
+                        "select * from people where id in (2,3)", peopleTableSpec,
                         "2,bbb,BBB\n3,ccc,CCC\n"
+                ),
+                Arguments.of(
+                        "select id, firstname, lastname from people where (firstname like 'b%' or firstname='ccc' or firstname='ddd') and id>=3", peopleTableSpec,
+                        "3,ccc,CCC\n4,ddd,DDD\n"
                 ));
     }
 

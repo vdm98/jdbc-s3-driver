@@ -18,15 +18,8 @@ public class TableSpec {
 
     public final String label;
     public final URI location;
-    public final FormatSpec format;
-    public final List<ColumnSpec> columns;
-
-    public TableSpec(String label, URI location, FormatSpec format, List<ColumnSpec> columns) {
-        this.label = label;
-        this.location = location;
-        this.format = format;
-        this.columns = columns;
-    }
+    public FormatSpec format = null;
+    public List<ColumnSpec> columns = null;
 
     public TableSpec(JsonObject object) {
         this.label = object.getString("label");
@@ -52,7 +45,7 @@ public class TableSpec {
     public static List<TableSpec> generateTableSpecifications(String... keys) {
         List<TableSpec> builder = new ArrayList<>();
         for (String tableName : keys) {
-            Path inputConfig = Paths.get("src", "test", "resources", tableName + ".json");
+            Path inputConfig = Paths.get("src", "test", "resources", "format", tableName + ".json");
             try (JsonReader reader = Json.createReader(Files.newBufferedReader(inputConfig, StandardCharsets.UTF_8))) {
                 JsonObject jsonObject = reader.readObject();
                 TableSpec spec = new TableSpec(jsonObject);

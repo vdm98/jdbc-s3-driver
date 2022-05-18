@@ -41,7 +41,7 @@ public class LakeSchemaFactory implements SchemaFactory {
                 // workaround to prevent multiple scanner class creation
                 if (tableMap != null) return tableMap;
                 ConnSpec connSpec = extractConnOperand(operand);
-                JsonArray inputTables = extractInputsOperand(operand);
+                JsonArray inputTables = extractTableSpecsOperand(operand);
 
                 BasicAWSCredentials awsCreds = new BasicAWSCredentials(connSpec.getAccessKey(), connSpec.getSecretKey());
                 AwsClientBuilder.EndpointConfiguration endpoint = new AwsClientBuilder.EndpointConfiguration(connSpec.getEndpointUrl(), connSpec.getRegion());
@@ -62,8 +62,8 @@ public class LakeSchemaFactory implements SchemaFactory {
         };
     }
 
-    private JsonArray extractInputsOperand(Map<String, Object> operand) {
-        String value = (String) operand.get("inputs");
+    private JsonArray extractTableSpecsOperand(Map<String, Object> operand) {
+        String value = (String) operand.get("tableSpecs");
         try (JsonReader reader = Json.createReader(new StringReader(value))) {
             return reader.readArray();
         }

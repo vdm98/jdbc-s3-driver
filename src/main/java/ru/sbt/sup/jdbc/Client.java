@@ -31,8 +31,10 @@ public class Client {
 //            "and (relationships.predicate_id = 'has_friend' " +
 //            "and people.firstname like 'aa%')";
 
-//            "select id, firstname, lastname from people where id=1 or firstname='aaa' or firstname='bbb'";
-             "select id, firstname, lastname from people where id=1 or firstname='bbb' or firstname='ccc'";
+            //"select id, firstname, lastname from people where id=1 or firstname='aaa' or firstname='bbb'";
+
+             "select id, firstname, lastname from people where (not firstname like 'b%' or firstname='ccc' or firstname='ddd') and id>=3";
+             //"select * from emps where id=1";
 
 //            "select id, firstname, lastname from people where id=1 or firstname in ('aa','bb')";
 //            "select id, firstname, lastname from people where id=1 and firstname='aa'";

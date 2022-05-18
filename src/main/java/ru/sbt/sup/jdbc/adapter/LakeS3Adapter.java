@@ -49,8 +49,6 @@ public class LakeS3Adapter {
         this.format = format;
         this.types = types;
         this.projects = projects;
-        //this.s3Source = new AmazonS3URI(source);
-        //this.s3Client = s3Client();
         this.s3Source = s3Source;
         this.s3Client = s3Client;
         this.query = compileQuery(projects, filters);
@@ -63,45 +61,59 @@ public class LakeS3Adapter {
 
     private static String compileWhereClause(List<RexNode> filters) {
         StringBuffer result = new StringBuffer();
-        List<String> handledFilters = new ArrayList<>();
         List<RexNode> unhandledFilters = new ArrayList<>();
+        boolean pushdown = true;
+        List<RexNode> originalFilters = new ArrayList<RexNode>();
+        originalFilters.addAll(filters);
+
         if (filters.size()==1){
             RexNode filter = filters.get(0);
             if (RelOptUtil.disjunctions(filter).size() == 1) {
-                performConjunction(filter, handledFilters, unhandledFilters);
-                result.append(String.join(" AND ", handledFilters));
+                performConjunction(filter, result, unhandledFilters);
+                // store unhandled filters
                 filters.clear();
                 filters.addAll(unhandledFilters);
             } else {
-                List<RexNode> disjunctions = RelOptUtil.disjunctions(filter);
-                int disj = 0;
-                for (RexNode disjunction : disjunctions) {
-                    performConjunction(disjunction, handledFilters, unhandledFilters);
-                    if (!unhandledFilters.isEmpty()) {
-                        result.setLength(0);
-                        break;
-                    }
-                    if (!handledFilters.isEmpty()){
-                        if (++disj > 1) result.append(" OR ");
-                        result.append(String.join(" AND ", handledFilters));
-                        handledFilters.clear();
-                    }
-                }
-                if (result.length()>0) {
+                performDisjunction(filter, result, unhandledFilters);
+                if (!unhandledFilters.isEmpty()) {
+                    result.setLength(0);
+                    // restore original filters
                     filters.clear();
+                    filters.addAll(originalFilters);
                 }
             }
         }
         return (result.length()>0) ? " WHERE " + result : "";
     }
 
-    private static void performConjunction(RexNode node, List<String> handledFilters, List<RexNode> unhandledFilters){
+    private static void performConjunction(RexNode node, StringBuffer result, List<RexNode> unhandledFilters){
         List<RexNode> conjunctions = RelOptUtil.conjunctions(node);
+        int conj = 0;
         for (RexNode conjunction : conjunctions) {
-            tryFilterConversion(conjunction).ifPresentOrElse(
-                handledFilters::add,
-                () -> unhandledFilters.add(conjunction));
+            ++conj;
+            List<RexNode> disjunctions = RelOptUtil.disjunctions(conjunction);
+            if (disjunctions.size() > 1) {
+                performDisjunction(conjunction, result, unhandledFilters);
+            }
+            Optional<String> filter = tryFilterConversion(conjunction);
+            if (filter.isPresent()){
+                if (conj > 1) result.append(" AND ");
+                result.append(filter.get());
+            } else {
+                unhandledFilters.add(conjunction);
+            }
         }
+    }
+
+    private static void performDisjunction(RexNode node, StringBuffer result, List<RexNode> unhandledFilters) {
+        List<RexNode> disjunctions = RelOptUtil.disjunctions(node);
+        int disj = 0;
+        result.append("(");
+        for (RexNode disjunction : disjunctions) {
+            if (++disj > 1) result.append(" OR ");
+            performConjunction(disjunction, result, unhandledFilters);
+        }
+        result.append(")");
     }
 
     private static Optional<String> tryFilterConversion(RexNode node) {
@@ -204,12 +216,13 @@ public class LakeS3Adapter {
         return new RowConverter(projectedTypes);
     }
 
-    public InputStream getResult() {
+    public InputStream getS3Result() {
         SelectObjectContentRequest request = new SelectObjectContentRequest();
         request.setBucketName(s3Source.getBucket());
         request.setKey(s3Source.getKey());
         request.setExpression(query);
         //request.setExpression("select * from S3Object[*][*] s"); // <-- working example on people.json aws
+        //request.setExpression("SELECT _1, _2, _3 FROM S3Object WHERE (_2 like 'b%' OR _2 in ('ccc','ddd')) AND _1 > 2");
         request.setExpressionType(ExpressionType.SQL);
         request.setInputSerialization(getInputSerialization(format));
         //request.setInputSerialization(getJsonInputSerialization(format));

@@ -37,7 +37,7 @@ public class LakeDriver {
                                 .add("factory", schemaFactoryName)
                                 .add("operand", Json.createObjectBuilder()
                                         .add("connSpec", connSpec.toJson().toString())
-                                        .add("inputs", tableSpecs))))
+                                        .add("tableSpecs", tableSpecs))))
                 .build();
         return DriverManager.getConnection("jdbc:calcite:model=inline:" + modelJson);
     }
