@@ -23,6 +23,9 @@ import ru.sbt.sup.jdbc.config.TypeSpec;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -153,7 +156,7 @@ public class LakeS3Adapter {
         final String fieldName;
         final String literal;
         if (op.equals("in")){
-            fieldName = String.format("%s", compileFieldName(left));
+            fieldName = compileFieldName(left, right);
             RexLiteral rlit = (RexLiteral) right;
             if (CalciteUtils.isSarg(rlit)){
                 List inList = Lists.transform(CalciteUtils.sargValue(rlit), Object::toString);
@@ -164,12 +167,12 @@ public class LakeS3Adapter {
             return Optional.of(String.format("%s %s (%s)", fieldName, op, literal));
         } else {
             if (isSimpleLiteralColumnValueFilter(left, right)) {
-                fieldName = String.format("%s", compileFieldName(left));
-                literal = String.format("%s", compileLiteral(right));
+                fieldName = compileFieldName(left, right);
+                literal = compileFieldValue(right);
             } else {
                 if (isSimpleLiteralColumnValueFilter(right, left)) {
-                    fieldName = String.format("%s", compileFieldName(right));
-                    literal = String.format("%s", compileLiteral(left));
+                    fieldName =  compileFieldName(right, left);
+                    literal = compileFieldValue(left);
                 } else {
                     return Optional.empty();
                 }
@@ -191,15 +194,22 @@ public class LakeS3Adapter {
         return node;
     }
 
-    private static String compileFieldName(RexNode node) {
-        int index = ((RexInputRef) node).getIndex() + 1;
-        return "_" + index;
+    private static String compileFieldName(RexNode fieldName, RexNode fieldValue) {
+        int index = ((RexInputRef) fieldName).getIndex() + 1;
+        RexLiteral literal = (RexLiteral) fieldValue;
+        if (SqlTypeName.DATETIME_TYPES.contains(literal.getTypeName())){
+            return "TO_TIMESTAMP("+"_" + index +", 'M/d/y')";
+        } else {
+            return "_" + index;
+        }
     }
 
-    private static String compileLiteral(RexNode node) {
+    private static String compileFieldValue(RexNode node) {
         RexLiteral literal = (RexLiteral) node;
         if (SqlTypeName.STRING_TYPES.contains(literal.getTypeName())) {
             return '\'' + literal.getValue2().toString() + '\'';
+        } else if (SqlTypeName.DATETIME_TYPES.contains(literal.getTypeName())){
+            return "TO_TIMESTAMP('" + literal.toString().replaceAll("/","-")+"', 'y-M-d H:m:ss')";
         }
         return literal.getValue2().toString();
     }
@@ -225,6 +235,8 @@ public class LakeS3Adapter {
         request.setExpression(query);
         //request.setExpression("select * from S3Object[*][*] s"); // <-- working example on people.json aws
         //request.setExpression("SELECT _1, _2, _3 FROM S3Object WHERE (_2 like 'b%' OR _2 in ('ccc','ddd')) AND _1 > 2");
+        //request.setExpression("SELECT _7, _2, _8 FROM S3Object WHERE CAST('2020-01-01T' AS TIMESTAMP) < CAST('2021-01-01T' AS TIMESTAMP)");
+        //request.setExpression("SELECT _7, _2, _8 FROM S3Object WHERE TO_TIMESTAMP(_8, 'M/d/y') > TO_TIMESTAMP('2014-01-20 00:00:00', 'y-M-d H:m:ss')");
         request.setExpressionType(ExpressionType.SQL);
         request.setInputSerialization(getInputSerialization(format));
         //request.setInputSerialization(getJsonInputSerialization(format));

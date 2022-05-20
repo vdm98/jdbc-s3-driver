@@ -3,12 +3,12 @@ package ru.sbt.sup.jdbc.adapter;
 import ru.sbt.sup.jdbc.config.FormatSpec;
 import ru.sbt.sup.jdbc.config.TypeSpec;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.text.SimpleDateFormat;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Date;
+import java.util.Locale;
 
 public class RowConverter {
 
@@ -44,8 +44,10 @@ public class RowConverter {
                 return Float.parseFloat(value);
             case DOUBLE:
                 return Double.parseDouble(value);
-            case DATE:
-                return LocalDate.parse(value, DateTimeFormatter.ofPattern(formatSpec.getDatePattern()));
+            case DATE: {
+                LocalDate ld = LocalDate.parse(value, DateTimeFormatter.ofPattern(formatSpec.getDatePattern()));
+                return Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            }
             case TIME:
                 return DateTimeFormatter.ISO_LOCAL_TIME.parse(value, LocalTime::from);
             case DATETIME:

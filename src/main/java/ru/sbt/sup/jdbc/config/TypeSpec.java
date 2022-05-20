@@ -18,9 +18,9 @@ public enum TypeSpec {
     LONG(Long.class, "long"),
     FLOAT(Float.class, "float"),
     DOUBLE(Double.class, "double"),
-    DATE(java.time.LocalDate.class, "date"),
-    TIME(java.time.LocalTime.class, "time"),
-    DATETIME(java.time.LocalDateTime.class, "datetime"),
+    DATE(java.util.Date.class, "date"),
+    TIME(java.util.Date.class, "time"),
+    DATETIME(java.util.Date.class, "datetime"),
     TIMESTAMP(java.time.Instant.class, "timestamp");
 
     private final Class clazz;

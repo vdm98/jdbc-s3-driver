@@ -1,0 +1,33 @@
+{
+  "label": "priority",
+  "location": "s3://222/priority.csv",
+  "format": {
+    "delimiter": ",",
+    "lineSeparator": "\n",
+    "quoteChar": "\"",
+    "escape": "\\",
+    "commentChar": "#",
+    "header": false,
+    "strictQuotes": false,
+    "ignoreLeadingWhiteSpace": false,
+    "ignoreQuotations": false,
+    "nullFieldIndicator": "neither",
+    "compression": "none",
+    "datePattern": "M/d/yyyy",
+    "timePattern": "HH:mm:ss",
+    "datetimePattern": "dd/MM/yyyy HH:mm:ss",
+    "timestampPattern": "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+  },
+  "columns": [
+    {
+      "label": "code",
+      "datatype": "string",
+      "nullable": false
+    },
+    {
+      "label": "name",
+      "datatype": "string",
+      "nullable": false
+    }
+  ]
+}

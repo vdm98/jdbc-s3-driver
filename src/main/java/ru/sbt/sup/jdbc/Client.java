@@ -14,9 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,11 +24,15 @@ public class Client {
     private static final Logger logger = LogManager.getLogger(Client.class);
 
     private static String sqlScript =
+            //"select o.orderid, o.country, p.name from orders o inner join priority p on o.priority=p.code " +
+            //        "where o.shipdate > CAST('2014-01-01' AS DATE)";
+
+            "select o.orderid, o.country, o.shipdate from orders o where o.orderdate > CAST('2012-01-20' AS DATE) or o.shipdate > CAST('2013-01-20' AS DATE)";
 
 
             //"select * from emps e inner join depts d on d.id=e.deptid where d.name='Sales'";//" where id=1";
-            "select * from orders where country not in ('Russia', 'Mexico', 'Australia') order by country";
-
+            //"select * from orders where country in ('Russia', 'Mexico', 'Australia') order by country";
+                    //"where country in ('Russia', 'Mexico', 'Australia') and p.name='Low'";
 
 
 
@@ -55,9 +57,9 @@ public class Client {
 //            "select avg(people.id) from people";
 
     public static void main(String[] args) throws IOException {
-        List<TableSpec> tableSpecs = TableSpec.generateTableSpecifications("orders");//""emps", "depts");//, "relationships");
+        List<TableSpec> tableSpecs = TableSpec.generateTableSpecifications("orders", "priority");//""emps", "depts");//, "relationships");
         ConnSpec connSpec = getConnProperties();
-
+        int l = 0;
         StringBuffer result = new StringBuffer();
         try (Connection connection = LakeDriver.getConnection(connSpec, tableSpecs)) {
             try (PreparedStatement statement = connection.prepareStatement(sqlScript)) {
@@ -67,10 +69,16 @@ public class Client {
                     while (resultSet.next()) {
                         List<String> builder = new ArrayList<>();
                         for (int i = 1; i <= limit; i++) {
-                            String string = resultSet.getString(i);
-                            builder.add(string);
+                            String value;
+                            if (metaData.getColumnType(i) == Types.TIMESTAMP){
+                                Calendar tzCal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+                                value = resultSet.getDate(i, tzCal).toString();
+                            } else {
+                                value = resultSet.getString(i);
+                            }
+                            builder.add(value);
                         }
-                        result.append(String.join(",", builder)).append("\n");
+                        result.append(++l).append(". ").append(String.join(",", builder)).append("\n");
                     }
                 }
             }

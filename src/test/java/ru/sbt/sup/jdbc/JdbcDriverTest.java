@@ -9,14 +9,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.sql.*;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -63,8 +57,14 @@ public class JdbcDriverTest {
                     while (resultSet.next()) {
                         List<String> builder = new ArrayList<>();
                         for (int i = 1; i <= limit; i++) {
-                            String string = resultSet.getString(i);
-                            builder.add(string);
+                            String value;
+                            if (metaData.getColumnType(i) == Types.TIMESTAMP){
+                                Calendar tzCal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+                                value = resultSet.getDate(i, tzCal).toString();
+                            } else {
+                                value = resultSet.getString(i);
+                            }
+                            builder.add(value);
                         }
                         result.append(String.join(",", builder)).append("\n");
                     }

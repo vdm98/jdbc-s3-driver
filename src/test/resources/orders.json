@@ -1,6 +1,6 @@
 {
   "label": "orders",
-  "location": "s3://222/orders.csv",
+  "location": "s3://vadimakh/orders.csv",
   "format": {
     "delimiter": ",",
     "lineSeparator": "\n",
@@ -40,7 +40,7 @@
       "nullable": false
     },
     {
-      "label": "OrderPriority",
+      "label": "Priority",
       "datatype": "string",
       "nullable": false
     },
