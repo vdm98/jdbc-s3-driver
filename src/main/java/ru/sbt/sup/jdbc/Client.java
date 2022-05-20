@@ -26,14 +26,23 @@ public class Client {
     private static final Logger logger = LogManager.getLogger(Client.class);
 
     private static String sqlScript =
+
+
+            //"select * from emps e inner join depts d on d.id=e.deptid where d.name='Sales'";//" where id=1";
+            "select * from orders where country not in ('Russia', 'Mexico', 'Australia') order by country";
+
+
+
+
+
 //            "select people.id, relationships.object_person_id from people " +
 //            "inner join relationships on people.id = relationships.subject_person_id " +
 //            "and (relationships.predicate_id = 'has_friend' " +
 //            "and people.firstname like 'aa%')";
 
-            //"select id, firstname, lastname from people where id=1 or firstname='aaa' or firstname='bbb'";
+            //"select id, firstname, lastname from people where id=1 or firstname='bbb' or firstname='ccc' order by id desc";
 
-             "select id, firstname, lastname from people where (not firstname like 'b%' or firstname='ccc' or firstname='ddd') and id>=3";
+             //"select id, firstname, lastname from people where (not firstname like 'b%' or firstname='ccc' or firstname='ddd') and id>=3";
              //"select * from emps where id=1";
 
 //            "select id, firstname, lastname from people where id=1 or firstname in ('aa','bb')";
@@ -46,7 +55,7 @@ public class Client {
 //            "select avg(people.id) from people";
 
     public static void main(String[] args) throws IOException {
-        List<TableSpec> tableSpecs = TableSpec.generateTableSpecifications("people");//, "relationships");
+        List<TableSpec> tableSpecs = TableSpec.generateTableSpecifications("orders");//""emps", "depts");//, "relationships");
         ConnSpec connSpec = getConnProperties();
 
         StringBuffer result = new StringBuffer();

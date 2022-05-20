@@ -1,0 +1,93 @@
+{
+  "label": "orders",
+  "location": "s3://222/orders.csv",
+  "format": {
+    "delimiter": ",",
+    "lineSeparator": "\n",
+    "quoteChar": "\"",
+    "escape": "\\",
+    "commentChar": "#",
+    "header": false,
+    "strictQuotes": false,
+    "ignoreLeadingWhiteSpace": false,
+    "ignoreQuotations": false,
+    "nullFieldIndicator": "neither",
+    "compression": "none",
+    "datePattern": "M/d/yyyy",
+    "timePattern": "HH:mm:ss",
+    "datetimePattern": "dd/MM/yyyy HH:mm:ss",
+    "timestampPattern": "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+  },
+  "columns": [
+    {
+      "label": "Region",
+      "datatype": "string",
+      "nullable": false
+    },
+    {
+      "label": "Country",
+      "datatype": "string",
+      "nullable": false
+    },
+    {
+      "label": "ItemType",
+      "datatype": "string",
+      "nullable": false
+    },
+    {
+      "label": "SalesChannel",
+      "datatype": "string",
+      "nullable": false
+    },
+    {
+      "label": "OrderPriority",
+      "datatype": "string",
+      "nullable": false
+    },
+    {
+      "label": "OrderDate",
+      "datatype": "date",
+      "nullable": false
+    },
+    {
+      "label": "OrderId",
+      "datatype": "integer",
+      "nullable": false
+    },
+    {
+      "label": "ShipDate",
+      "datatype": "date",
+      "nullable": false
+    },
+    {
+      "label": "UnitsSold",
+      "datatype": "integer",
+      "nullable": false
+    },
+    {
+      "label": "UnitPrice",
+      "datatype": "double",
+      "nullable": false
+    },
+    {
+      "label": "UnitCost",
+      "datatype": "double",
+      "nullable": false
+    },
+    {
+      "label": "TotalRevenue",
+      "datatype": "double",
+      "nullable": false
+    },
+    {
+      "label": "TotalCost",
+      "datatype": "double",
+      "nullable": false
+    },
+    {
+      "label": "TotalProfit",
+      "datatype": "double",
+      "nullable": false
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 package ru.sbt.sup.jdbc.adapter;
 
+import ru.sbt.sup.jdbc.config.FormatSpec;
 import ru.sbt.sup.jdbc.config.TypeSpec;
 
 import java.time.Instant;
@@ -11,13 +12,15 @@ import java.time.format.DateTimeParseException;
 
 public class RowConverter {
 
+    private final FormatSpec formatSpec;
     private final TypeSpec[] projectedFieldTypes;
 
-    public RowConverter(TypeSpec[] projectedFieldTypes) {
+    public RowConverter(FormatSpec formatSpec, TypeSpec[] projectedFieldTypes) {
+        this.formatSpec = formatSpec;
         this.projectedFieldTypes = projectedFieldTypes;
     }
 
-    static Object convertField(TypeSpec type, String value) throws NumberFormatException, DateTimeParseException {
+    Object convertField(TypeSpec type, String value) throws NumberFormatException, DateTimeParseException {
         switch (type) {
             case STRING:
                 return value;
@@ -42,7 +45,7 @@ public class RowConverter {
             case DOUBLE:
                 return Double.parseDouble(value);
             case DATE:
-                return DateTimeFormatter.ISO_LOCAL_DATE.parse(value, LocalDate::from);
+                return LocalDate.parse(value, DateTimeFormatter.ofPattern(formatSpec.getDatePattern()));
             case TIME:
                 return DateTimeFormatter.ISO_LOCAL_TIME.parse(value, LocalTime::from);
             case DATETIME:

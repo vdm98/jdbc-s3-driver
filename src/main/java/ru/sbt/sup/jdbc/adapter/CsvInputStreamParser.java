@@ -17,13 +17,13 @@ public class CsvInputStreamParser implements Closeable {
 
     public CsvInputStreamParser(FormatSpec spec, RowConverter converter, InputStream inputStream) {
         CsvFormat format = new CsvFormat();
-        format.setDelimiter(spec.delimiter);
-        format.setLineSeparator(spec.lineSeparator);
-        format.setQuote(spec.quoteChar);
-        format.setQuoteEscape(spec.escape);
+        format.setDelimiter(spec.getDelimiter());
+        format.setLineSeparator(spec.getLineSeparator());
+        format.setQuote(spec.getQuoteChar());
+        format.setQuoteEscape(spec.getEscape());
         CsvParserSettings parserSettings = new CsvParserSettings();
         parserSettings.setFormat(format);
-        parserSettings.setHeaderExtractionEnabled(spec.header);
+        parserSettings.setHeaderExtractionEnabled(spec.isHeader());
         this.converter = converter;
         this.parser = new CsvParser(parserSettings);
         this.parser.beginParsing(inputStream, StandardCharsets.UTF_8);

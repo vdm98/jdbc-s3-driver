@@ -86,21 +86,25 @@ public class LakeS3Adapter {
         return (result.length()>0) ? " WHERE " + result : "";
     }
 
-    private static void performConjunction(RexNode node, StringBuffer result, List<RexNode> unhandledFilters){
-        List<RexNode> conjunctions = RelOptUtil.conjunctions(node);
+    private static void performConjunction(RexNode rexNode, StringBuffer result, List<RexNode> unhandledFilters){
+        List<RexNode> conjunctions = RelOptUtil.conjunctions(rexNode);
         int conj = 0;
-        for (RexNode conjunction : conjunctions) {
+        for (RexNode node : conjunctions) {
             ++conj;
-            List<RexNode> disjunctions = RelOptUtil.disjunctions(conjunction);
+            List<RexNode> disjunctions = RelOptUtil.disjunctions(node);
             if (disjunctions.size() > 1) {
-                performDisjunction(conjunction, result, unhandledFilters);
+                performDisjunction(node, result, unhandledFilters);
             }
-            Optional<String> filter = tryFilterConversion(conjunction);
+            if (node.getKind().name().equals("NOT")){
+                result.append(" NOT ");
+                node = ((RexCall)node).getOperands().get(0);
+            }
+            Optional<String> filter = tryFilterConversion(node);
             if (filter.isPresent()){
                 if (conj > 1) result.append(" AND ");
                 result.append(filter.get());
             } else {
-                unhandledFilters.add(conjunction);
+                unhandledFilters.add(node);
             }
         }
     }
@@ -135,8 +139,6 @@ public class LakeS3Adapter {
                 return tryOperatorFilterConversion("like", call);
             case SEARCH:
                 return tryOperatorFilterConversion("in", call);
-//            case NOT:
-//                return tryOperatorFilterConversion("not", call);
             default:
                 return Optional.empty();
         }
@@ -213,7 +215,7 @@ public class LakeS3Adapter {
         TypeSpec[] projectedTypes = IntStream.of(projects).boxed()
                 .map(i -> types[i])
                 .toArray(TypeSpec[]::new);
-        return new RowConverter(projectedTypes);
+        return new RowConverter(format, projectedTypes);
     }
 
     public InputStream getS3Result() {
@@ -240,15 +242,15 @@ public class LakeS3Adapter {
 
     private static InputSerialization getInputSerialization(FormatSpec spec) {
         CSVInput csvInput = new CSVInput();
-        csvInput.setFieldDelimiter(spec.delimiter);
-        csvInput.setRecordDelimiter(spec.lineSeparator);
-        csvInput.setQuoteCharacter(spec.quoteChar);
-        csvInput.setQuoteEscapeCharacter(spec.escape);
-        csvInput.setFileHeaderInfo(spec.header ? FileHeaderInfo.USE : FileHeaderInfo.NONE);
-        csvInput.setComments(spec.commentChar);
+        csvInput.setFieldDelimiter(spec.getDelimiter());
+        csvInput.setRecordDelimiter(spec.getLineSeparator());
+        csvInput.setQuoteCharacter(spec.getQuoteChar());
+        csvInput.setQuoteEscapeCharacter(spec.getEscape());
+        csvInput.setFileHeaderInfo(spec.isHeader() ? FileHeaderInfo.USE : FileHeaderInfo.NONE);
+        csvInput.setComments(spec.getCommentChar());
         InputSerialization inputSerialization = new InputSerialization();
         inputSerialization.setCsv(csvInput);
-        switch (spec.compression) {
+        switch (spec.getCompression()) {
             case GZIP:
                 inputSerialization.setCompressionType(CompressionType.GZIP);
                 break;
@@ -264,7 +266,7 @@ public class LakeS3Adapter {
         jsonInput.setType(JSONType.DOCUMENT);
         InputSerialization inputSerialization = new InputSerialization();
         inputSerialization.setJson(jsonInput);
-        switch (spec.compression) {
+        switch (spec.getCompression()) {
             case GZIP:
                 inputSerialization.setCompressionType(CompressionType.GZIP);
                 break;
@@ -277,10 +279,10 @@ public class LakeS3Adapter {
 
     private static OutputSerialization getOutputSerialization(FormatSpec spec) {
         CSVOutput csvOutput = new CSVOutput();
-        csvOutput.setFieldDelimiter(spec.delimiter);
-        csvOutput.setRecordDelimiter(spec.lineSeparator);
-        csvOutput.setQuoteCharacter(spec.quoteChar);
-        csvOutput.setQuoteEscapeCharacter(spec.escape);
+        csvOutput.setFieldDelimiter(spec.getDelimiter());
+        csvOutput.setRecordDelimiter(spec.getLineSeparator());
+        csvOutput.setQuoteCharacter(spec.getQuoteChar());
+        csvOutput.setQuoteEscapeCharacter(spec.getEscape());
         OutputSerialization outputSerialization = new OutputSerialization();
         outputSerialization.setCsv(csvOutput);
         return outputSerialization;

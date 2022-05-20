@@ -1,6 +1,6 @@
 {
-  "label": "people",
-  "location": "s3://222/people.csv",
+  "label": "emps",
+  "location": "s3://222/emps.csv",
   "format": {
     "delimiter": ",",
     "lineSeparator": "\n",
@@ -12,7 +12,11 @@
     "ignoreLeadingWhiteSpace": false,
     "ignoreQuotations": false,
     "nullFieldIndicator": "neither",
-    "compression": "none"
+    "compression": "none",
+    "datePattern": "M/d/yyyy",
+    "timePattern": "HH:mm:ss",
+    "datetimePattern": "dd/MM/yyyy HH:mm:ss",
+    "timestampPattern": "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
   },
   "columns": [
     {
@@ -21,13 +25,13 @@
       "nullable": false
     },
     {
-      "label": "firstname",
+      "label": "name",
       "datatype": "string",
       "nullable": false
     },
     {
-      "label": "lastname",
-      "datatype": "string",
+      "label": "deptid",
+      "datatype": "integer",
       "nullable": false
     }
   ]

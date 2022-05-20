@@ -5,31 +5,21 @@ import javax.json.JsonObject;
 
 public class FormatSpec {
 
-    public final char delimiter;
-    public final String lineSeparator;
-    public final char quoteChar;
-    public final char escape;
-    public final char commentChar;
-    public final boolean header;
-    public final boolean strictQuotes;
-    public final boolean ignoreLeadingWhiteSpace;
-    public final boolean ignoreQuotations;
-    public final NullFieldIndicator nullFieldIndicator;
-    public final CompressionType compression;
-
-    public FormatSpec(char delimiter, String lineSeparator, char quoteChar, char escape, char commentChar, boolean header, boolean strictQuotes, boolean ignoreLeadingWhiteSpace, boolean ignoreQuotations, NullFieldIndicator nullFieldIndicator, CompressionType compression) {
-        this.delimiter = delimiter;
-        this.lineSeparator = lineSeparator;
-        this.quoteChar = quoteChar;
-        this.escape = escape;
-        this.commentChar = commentChar;
-        this.header = header;
-        this.strictQuotes = strictQuotes;
-        this.ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace;
-        this.ignoreQuotations = ignoreQuotations;
-        this.nullFieldIndicator = nullFieldIndicator;
-        this.compression = compression;
-    }
+    private final char delimiter;
+    private final String lineSeparator;
+    private final char quoteChar;
+    private final char escape;
+    private final char commentChar;
+    private final boolean header;
+    private final boolean strictQuotes;
+    private final boolean ignoreLeadingWhiteSpace;
+    private final boolean ignoreQuotations;
+    private final NullFieldIndicator nullFieldIndicator;
+    private final CompressionType compression;
+    private final String datePattern;
+    private final String timePattern;
+    private final String datetimePattern;
+    private final String timestampPattern;
 
     FormatSpec(JsonObject object) {
         this.delimiter = object.getString("delimiter").charAt(0);
@@ -43,6 +33,10 @@ public class FormatSpec {
         this.ignoreQuotations = object.getBoolean("ignoreQuotations");
         this.nullFieldIndicator = NullFieldIndicator.valueOf(object.getString("nullFieldIndicator").toUpperCase());
         this.compression = CompressionType.valueOf(object.getString("compression").toUpperCase());
+        this.datePattern = object.getString("datePattern");
+        this.timePattern = object.getString("timePattern");
+        this.datetimePattern = object.getString("datetimePattern");
+        this.timestampPattern = object.getString("timestampPattern");
     }
 
     public enum CompressionType {
@@ -70,6 +64,70 @@ public class FormatSpec {
                 .add("ignoreQuotations", ignoreQuotations)
                 .add("nullFieldIndicator", nullFieldIndicator.name().toLowerCase())
                 .add("compression", compression.name().toLowerCase())
+                .add("datePattern", datePattern)
+                .add("timePattern", timePattern)
+                .add("datetimePattern", datetimePattern)
+                .add("timestampPattern", timestampPattern)
                 .build();
+    }
+
+    public char getDelimiter() {
+        return delimiter;
+    }
+
+    public String getLineSeparator() {
+        return lineSeparator;
+    }
+
+    public char getQuoteChar() {
+        return quoteChar;
+    }
+
+    public char getEscape() {
+        return escape;
+    }
+
+    public char getCommentChar() {
+        return commentChar;
+    }
+
+    public boolean isHeader() {
+        return header;
+    }
+
+    public boolean isStrictQuotes() {
+        return strictQuotes;
+    }
+
+    public boolean isIgnoreLeadingWhiteSpace() {
+        return ignoreLeadingWhiteSpace;
+    }
+
+    public boolean isIgnoreQuotations() {
+        return ignoreQuotations;
+    }
+
+    public NullFieldIndicator getNullFieldIndicator() {
+        return nullFieldIndicator;
+    }
+
+    public CompressionType getCompression() {
+        return compression;
+    }
+
+    public String getDatePattern() {
+        return datePattern;
+    }
+
+    public String getTimePattern() {
+        return timePattern;
+    }
+
+    public String getDatetimePattern() {
+        return datetimePattern;
+    }
+
+    public String getTimestampPattern() {
+        return timestampPattern;
     }
 }

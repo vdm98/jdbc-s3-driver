@@ -45,7 +45,7 @@ public class TableSpec {
     public static List<TableSpec> generateTableSpecifications(String... keys) {
         List<TableSpec> builder = new ArrayList<>();
         for (String tableName : keys) {
-            Path inputConfig = Paths.get("src", "test", "resources", "format", tableName + ".json");
+            Path inputConfig = Paths.get("src", "test", "resources", tableName + ".json");
             try (JsonReader reader = Json.createReader(Files.newBufferedReader(inputConfig, StandardCharsets.UTF_8))) {
                 JsonObject jsonObject = reader.readObject();
                 TableSpec spec = new TableSpec(jsonObject);
