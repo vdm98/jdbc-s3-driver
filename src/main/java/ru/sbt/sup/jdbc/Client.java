@@ -27,7 +27,7 @@ public class Client {
             //"select o.orderid, o.country, p.name from orders o inner join priority p on o.priority=p.code " +
             //        "where o.shipdate > CAST('2014-01-01' AS DATE)";
 
-            "select o.orderid, o.country, o.shipdate from orders o where o.shipdate > CAST('2012-01-20' AS DATE) and o.shipdate <= CAST('2014-07-05' AS DATE)";
+            //"select o.orderid, o.country, o.shipdate from orders o where o.shipdate > CAST('2012-01-20' AS DATE) and o.shipdate <= CAST('2014-07-05' AS DATE)";
 
 
 
@@ -38,10 +38,8 @@ public class Client {
 
 
 
-//            "select people.id, relationships.object_person_id from people " +
-//            "inner join relationships on people.id = relationships.subject_person_id " +
-//            "and (relationships.predicate_id = 'has_friend' " +
-//            "and people.firstname like 'aa%')";
+            "select sum(e.salary), d.deptname from emps e inner join depts d on e.deptid = d.id "+
+            "where d.id in (10,20,30) group by d.deptname";  // and e.hiredate > CAST('2020-03-01' AS DATE)";
 
             //"select id, firstname, lastname from people where id=1 or firstname='bbb' or firstname='ccc' order by id desc";
 
@@ -50,7 +48,7 @@ public class Client {
 
 //            "select id, firstname, lastname from people where id=1 or firstname in ('aa','bb')";
 //            "select id, firstname, lastname from people where id=1 and firstname='aa'";
-//            "select id, firstname, lastname from people where id in (1,5)";// or firstname='bbb' or lastname='CCC'";
+//            "select * from depts";// or firstname='bbb' or lastname='CCC'";
 //           "select id, firstname, lastname from people";// where firstname='bb'";
  //             "select * from people where not id > 2";
 //            "select max(relationships.subject_person_id) from relationships";
@@ -58,7 +56,7 @@ public class Client {
 //            "select avg(people.id) from people";
 
     public static void main(String[] args) throws IOException {
-        List<TableSpec> tableSpecs = TableSpec.generateTableSpecifications("orders", "priority");//""emps", "depts");//, "relationships");
+        List<TableSpec> tableSpecs = TableSpec.generateTableSpecifications("emps", "depts");//orders", "priority");//""emps", "depts");//, "relationships");
         ConnSpec connSpec = getConnProperties();
         int l = 0;
         StringBuffer result = new StringBuffer();
@@ -79,7 +77,7 @@ public class Client {
                             }
                             builder.add(value);
                         }
-                        result.append(++l).append(". ").append(String.join(",", builder)).append("\n");
+                        result.append(++l).append(". ").append(String.join(", ", builder)).append("\n");
                     }
                 }
             }

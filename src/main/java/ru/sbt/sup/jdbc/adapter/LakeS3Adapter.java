@@ -65,7 +65,7 @@ public class LakeS3Adapter {
         return compileSelectFromClause(projects) + compileWhereClause(filters);
     }
 
-    private static String compileWhereClause(List<RexNode> filters) {
+    private String compileWhereClause(List<RexNode> filters) {
         StringBuffer result = new StringBuffer();
         List<RexNode> unhandledFilters = new ArrayList<>();
         boolean pushdown = true;
@@ -92,7 +92,7 @@ public class LakeS3Adapter {
         return (result.length()>0) ? " WHERE " + result : "";
     }
 
-    private static void performConjunction(RexNode rexNode, StringBuffer result, List<RexNode> unhandledFilters){
+    private void performConjunction(RexNode rexNode, StringBuffer result, List<RexNode> unhandledFilters){
         List<RexNode> conjunctions = RelOptUtil.conjunctions(rexNode);
         int conj = 0;
         for (RexNode node : conjunctions) {
@@ -115,7 +115,7 @@ public class LakeS3Adapter {
         }
     }
 
-    private static void performDisjunction(RexNode node, StringBuffer result, List<RexNode> unhandledFilters) {
+    private void performDisjunction(RexNode node, StringBuffer result, List<RexNode> unhandledFilters) {
         List<RexNode> disjunctions = RelOptUtil.disjunctions(node);
         int disj = 0;
         result.append("(");
@@ -126,7 +126,7 @@ public class LakeS3Adapter {
         result.append(")");
     }
 
-    private static Optional<String> tryFilterConversion(RexNode node) {
+    private Optional<String> tryFilterConversion(RexNode node) {
         RexCall call = (RexCall) node;
         switch (call.getKind()) {
             case NOT_EQUALS:
@@ -150,7 +150,7 @@ public class LakeS3Adapter {
         }
     }
 
-    private static Optional<String> tryOperatorFilterConversion(String op, RexCall call) {
+    private Optional<String> tryOperatorFilterConversion(String op, RexCall call) {
         List<RexNode> operands = call.getOperands();
         RexNode originalLeft = operands.get(0);
         RexNode originalRight = operands.get(1);
@@ -217,24 +217,28 @@ public class LakeS3Adapter {
         return node;
     }
 
-    private static String compileFieldName(RexNode fieldName, RexNode fieldValue) {
-        int index = ((RexInputRef) fieldName).getIndex() + 1;
-        RexLiteral literal = (RexLiteral) fieldValue;
+    private String compileFieldName(RexNode field, RexNode value) {
+        int index = ((RexInputRef) field).getIndex() + 1;
+        RexLiteral literal = (RexLiteral) value;
         if (SqlTypeName.DATETIME_TYPES.contains(literal.getTypeName())){
-            return "TO_TIMESTAMP("+"_" + index +", 'M/d/y')";
+            return "TO_TIMESTAMP("+"_" + index + ", '" + format.getDatePattern() + "')";
+        } else if (literal.getType().toString().startsWith("DECIMAL")){
+            return "CAST (_" + index + " AS DECIMAL)";
+        }  else if (literal.getType().toString().equals("INTEGER")){
+            return "CAST (_" + index + " AS INTEGER)";
         } else {
             return "_" + index;
         }
     }
 
-    private static String compileFieldValue(RexNode node) {
-        RexLiteral literal = (RexLiteral) node;
+    private String compileFieldValue(RexNode value) {
+        RexLiteral literal = (RexLiteral) value;
         if (SqlTypeName.STRING_TYPES.contains(literal.getTypeName())) {
             return '\'' + literal.getValue2().toString() + '\'';
         } else if (SqlTypeName.DATETIME_TYPES.contains(literal.getTypeName())){
             return "TO_TIMESTAMP('" + literal.toString().replaceAll("/","-")+"', 'y-M-d H:m:ss')";
         }
-        return literal.getValue2().toString();
+        return literal.getValue().toString(); //value2 !!!!!!!!!!
     }
 
     private static String compileSelectFromClause(int[] projects) {
@@ -274,6 +278,7 @@ public class LakeS3Adapter {
         request.setKey(s3Source.getKey());
         request.setExpression(query);
         //request.setExpression("select * from S3Object[*][*] s"); // <-- working example on people.json aws
+        //request.setExpression("SELECT _1, _2, _3 FROM S3Object WHERE CAST(_1 AS INTEGER) = 1");
         //request.setExpression("SELECT _1, _2, _3 FROM S3Object WHERE (_2 like 'b%' OR _2 in ('ccc','ddd')) AND _1 > 2");
         //request.setExpression("SELECT _7, _2, _8 FROM S3Object WHERE CAST('2020-01-01T' AS TIMESTAMP) < CAST('2021-01-01T' AS TIMESTAMP)");
         //request.setExpression("SELECT _7, _2, _8 FROM S3Object WHERE TO_TIMESTAMP(_8, 'M/d/y') > TO_TIMESTAMP('2014-01-20 00:00:00', 'y-M-d H:m:ss')");
