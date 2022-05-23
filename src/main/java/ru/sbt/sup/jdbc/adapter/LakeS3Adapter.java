@@ -8,6 +8,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.model.*;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Range;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
@@ -15,6 +16,8 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.Sarg;
+import org.apache.calcite.util.TimestampString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import ru.sbt.sup.jdbc.Client;
@@ -141,7 +144,7 @@ public class LakeS3Adapter {
             case LIKE:
                 return tryOperatorFilterConversion("like", call);
             case SEARCH:
-                return tryOperatorFilterConversion("in", call);
+                return tryOperatorFilterConversion("search", call);
             default:
                 return Optional.empty();
         }
@@ -155,16 +158,36 @@ public class LakeS3Adapter {
         RexNode right = unwrapCasts(originalRight);
         final String fieldName;
         final String literal;
-        if (op.equals("in")){
+        if (op.equals("search")){
             fieldName = compileFieldName(left, right);
             RexLiteral rlit = (RexLiteral) right;
             if (CalciteUtils.isSarg(rlit)){
-                List inList = Lists.transform(CalciteUtils.sargValue(rlit), Object::toString);
-                literal = String.join(",", inList);
+                // in operator
+                List<Object> sargList = CalciteUtils.sargValue(rlit);
+                if (!sargList.isEmpty()) {
+                    List inList = Lists.transform(sargList, Object::toString);
+                    literal = String.join(",", inList);
+                    return Optional.of(String.format("%s %s (%s)", fieldName, "in", literal));
+                } else {
+                    // ranges
+                    final Sarg sarg = rlit.getValueAs(Sarg.class);
+                    Set<Range> ranges = sarg.rangeSet.asRanges();
+                    StringBuffer rangeStr = new StringBuffer();
+                    ranges.forEach(range -> {
+                        if (rangeStr.length() > 0) rangeStr.append(" AND ");
+                        appendSargFieldName(range.lowerEndpoint(), fieldName, rangeStr);
+                        rangeStr.append(" > ");
+                        appendSargFieldValue(range.lowerEndpoint(), rangeStr);
+                        rangeStr.append(" AND ");
+                        appendSargFieldName(range.upperEndpoint(), fieldName, rangeStr);
+                        rangeStr.append(" < ");
+                        appendSargFieldValue(range.upperEndpoint(), rangeStr);
+                    });
+                    return Optional.of(rangeStr.toString());
+                }
             } else {
                 return Optional.empty();
             }
-            return Optional.of(String.format("%s %s (%s)", fieldName, op, literal));
         } else {
             if (isSimpleLiteralColumnValueFilter(left, right)) {
                 fieldName = compileFieldName(left, right);
@@ -214,12 +237,29 @@ public class LakeS3Adapter {
         return literal.getValue2().toString();
     }
 
-    static String compileSelectFromClause(int[] projects) {
+    private static String compileSelectFromClause(int[] projects) {
         String selectList = IntStream.of(projects).boxed()
                 .map(i -> i + 1).map(i -> "_" + i)
                 .collect(Collectors.joining(", "));
         return String.format("SELECT %s FROM S3Object", selectList);
     }
+
+    private static void appendSargFieldName(Comparable endpoint, String fieldName, StringBuffer rangeStr) {
+        if (endpoint instanceof TimestampString) {
+            rangeStr.append("TO_TIMESTAMP(" + fieldName + ", 'M/d/y')");
+        } else {
+            rangeStr.append(fieldName);
+        }
+    }
+
+    private static void appendSargFieldValue(Comparable endpoint, StringBuffer rangeStr) {
+        if (endpoint instanceof TimestampString) {
+            rangeStr.append("TO_TIMESTAMP('" + endpoint + "', 'y-M-d H:m:ss')");
+        } else {
+            rangeStr.append(endpoint);
+        }
+    }
+
 
     public RowConverter getRowConverter() {
         TypeSpec[] projectedTypes = IntStream.of(projects).boxed()

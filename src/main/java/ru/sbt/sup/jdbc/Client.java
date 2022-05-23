@@ -27,7 +27,8 @@ public class Client {
             //"select o.orderid, o.country, p.name from orders o inner join priority p on o.priority=p.code " +
             //        "where o.shipdate > CAST('2014-01-01' AS DATE)";
 
-            "select o.orderid, o.country, o.shipdate from orders o where o.orderdate > CAST('2012-01-20' AS DATE) or o.shipdate > CAST('2013-01-20' AS DATE)";
+            "select o.orderid, o.country, o.shipdate from orders o where o.shipdate > CAST('2012-01-20' AS DATE) and o.shipdate <= CAST('2014-07-05' AS DATE)";
+
 
 
             //"select * from emps e inner join depts d on d.id=e.deptid where d.name='Sales'";//" where id=1";

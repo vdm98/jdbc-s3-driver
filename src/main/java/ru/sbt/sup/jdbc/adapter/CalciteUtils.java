@@ -24,10 +24,12 @@ public class CalciteUtils {
         List<Object> values = new ArrayList<>();
         final SqlTypeName sqlTypeName = type.getSqlTypeName();
         if (sarg.isPoints()) {
+            // ref = value or ref IN (value1, ...)
             Set<Range> ranges = sarg.rangeSet.asRanges();
             ranges.forEach(range ->
                     values.add(sargPointValue(range.lowerEndpoint(), sqlTypeName)));
         } else if (sarg.isComplementedPoints()) {
+            // ref <> value or ref NOT IN (value1, ...)
             Set<Range> ranges = sarg.negate().rangeSet.asRanges();
             ranges.forEach(range ->
                     values.add(sargPointValue(range.lowerEndpoint(), sqlTypeName)));
