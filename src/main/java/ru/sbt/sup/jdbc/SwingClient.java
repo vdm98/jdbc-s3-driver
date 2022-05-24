@@ -20,8 +20,20 @@ import java.util.List;
 
 public class SwingClient {
 
+    private static final String[] queries = {
+            "select * from orders order by country",
+            "select country, count(*) \"COUNT\", sum(TotalProfit) \"TOTAL\" from orders group by country order by sum(TotalProfit) desc",
+            "select id, firstname, lastname from emps where id=1",
+            "select id, firstname, lastname from emps where id=1 or firstname='bbb' or firstname='ccc'",
+            "select * from emps where id in (2,3)",
+            "select id, firstname, lastname from emps where (firstname like 'b%' or firstname='ccc' or firstname='ddd') and id>=3",
+            "select e.id, e.lastname, e.hiredate, d.deptname from emps e inner join depts d on e.deptid = d.id where d.id in (10,20,30) and e.hiredate > CAST('2020-03-01' AS DATE)",
+            "select o.orderid, o.country, o.shipdate from orders o where o.shipdate > CAST('2012-01-20' AS DATE) and o.shipdate <= CAST('2014-07-05' AS DATE)",
+            "select id, lastname, salary, hiredate from emps where salary between 1000.25 and 1000.65 or hiredate between CAST('2020-09-01' AS DATE) and CAST('2020-11-01' AS DATE)",
+            "select sum(e.salary), d.deptname from emps e inner join depts d on e.deptid = d.id where d.id in (10,20,30) group by d.deptname"};
+
     public static void main(String[] args) throws IOException {
-        Result result = executeQuery("select id, lastname, firstname, salary, hiredate from emps"); // where id in (1,3,5,7,9)");
+        Result result = executeQuery(queries[0]);
 
         JFrame frame = new JFrame();
         JPanel panel = new JPanel();
@@ -36,11 +48,22 @@ public class SwingClient {
         resultTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
 
         JScrollPane scrollPane = new JScrollPane(resultTable);
-        scrollPane.setBounds(10, 150, 1150, 400);
+        scrollPane.setBounds(10, 180, 1150, 400);
 
         JTextArea queryTextArea  = new JTextArea();
-        queryTextArea.setText("select id, lastname, firstname, salary, hiredate from emps");
+        queryTextArea.setText(queries[0]);
         queryTextArea.setBounds(10, 10, 1000, 130);
+
+        JComboBox querySetCombobox = new JComboBox(queries);
+        querySetCombobox.setBounds(5, 150, 1162, 20);
+        querySetCombobox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JComboBox box = (JComboBox)e.getSource();
+                String item = (String)box.getSelectedItem();
+                queryTextArea.setText(item);
+            }
+        });
 
         JButton runButton = new JButton("RUN");
         runButton.setBounds(1020, 7, 140, 135);
@@ -68,9 +91,10 @@ public class SwingClient {
         panel.add(queryTextArea);
         panel.add(scrollPane);
         panel.add(runButton);
+        panel.add(querySetCombobox);
 
         frame.setContentPane(panel);
-        frame.setSize(1168, 583);
+        frame.setSize(1168, 683);
         frame.setResizable(true);
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
