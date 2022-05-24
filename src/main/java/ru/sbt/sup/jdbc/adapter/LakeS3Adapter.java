@@ -238,25 +238,25 @@ public class LakeS3Adapter {
         } else if (SqlTypeName.DATETIME_TYPES.contains(literal.getTypeName())){
             return "TO_TIMESTAMP('" + literal.toString().replaceAll("/","-")+"', 'y-M-d H:m:ss')";
         }
-        return literal.getValue().toString(); //value2 !!!!!!!!!!
+        return literal.getValue().toString(); // was getValue2 !!!!!!!!!!
     }
 
-    private static String compileSelectFromClause(int[] projects) {
+    private String compileSelectFromClause(int[] projects) {
         String selectList = IntStream.of(projects).boxed()
                 .map(i -> i + 1).map(i -> "_" + i)
                 .collect(Collectors.joining(", "));
         return String.format("SELECT %s FROM S3Object", selectList);
     }
 
-    private static void appendSargFieldName(Comparable endpoint, String fieldName, StringBuffer rangeStr) {
+    private void appendSargFieldName(Comparable endpoint, String fieldName, StringBuffer rangeStr) {
         if (endpoint instanceof TimestampString) {
-            rangeStr.append("TO_TIMESTAMP(" + fieldName + ", 'M/d/y')");
+            rangeStr.append("TO_TIMESTAMP(" + fieldName + ", '" + format.getDatePattern() + "')");
         } else {
             rangeStr.append(fieldName);
         }
     }
 
-    private static void appendSargFieldValue(Comparable endpoint, StringBuffer rangeStr) {
+    private void appendSargFieldValue(Comparable endpoint, StringBuffer rangeStr) {
         if (endpoint instanceof TimestampString) {
             rangeStr.append("TO_TIMESTAMP('" + endpoint + "', 'y-M-d H:m:ss')");
         } else {
