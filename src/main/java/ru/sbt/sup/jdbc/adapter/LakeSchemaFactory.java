@@ -13,11 +13,15 @@ import org.apache.calcite.schema.impl.AbstractSchema;
 import ru.sbt.sup.jdbc.config.ConnSpec;
 import ru.sbt.sup.jdbc.config.TableSpec;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
+//import javax.json.Json;
+//import javax.json.JsonArray;
+//import javax.json.JsonObject;
+//import javax.json.JsonReader;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.StringReader;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -41,7 +45,7 @@ public class LakeSchemaFactory implements SchemaFactory {
                 // workaround to prevent multiple scanner class creation
                 if (tableMap != null) return tableMap;
                 ConnSpec connSpec = extractConnOperand(operand);
-                JsonArray inputTables = extractTableSpecsOperand(operand);
+                JSONArray inputTables = extractTableSpecsOperand(operand);
 
                 BasicAWSCredentials awsCreds = new BasicAWSCredentials(connSpec.getAccessKey(), connSpec.getSecretKey());
                 AwsClientBuilder.EndpointConfiguration endpoint = new AwsClientBuilder.EndpointConfiguration(connSpec.getEndpointUrl(), connSpec.getRegion());
@@ -51,8 +55,8 @@ public class LakeSchemaFactory implements SchemaFactory {
                         .withPathStyleAccessEnabled(true)
                         .build();
 
-                tableMap = inputTables.stream()
-                        .map(v -> (JsonObject) v)
+                tableMap = inputTables.toList().stream()
+                        .map(v -> new JSONObject((Map)v))
                         .map(TableSpec::new)
                         .collect(Collectors.toMap(
                                 spec -> spec.label.toUpperCase(),
@@ -62,17 +66,12 @@ public class LakeSchemaFactory implements SchemaFactory {
         };
     }
 
-    private JsonArray extractTableSpecsOperand(Map<String, Object> operand) {
-        String value = (String) operand.get("tableSpecs");
-        try (JsonReader reader = Json.createReader(new StringReader(value))) {
-            return reader.readArray();
-        }
+    private JSONArray extractTableSpecsOperand(Map<String, Object> operand) {
+        return new JSONArray((List)operand.get("tableSpecs"));
     }
 
     private ConnSpec extractConnOperand(Map<String, Object> operand) {
-        String value = (String) operand.get("connSpec");
-        try (JsonReader reader = Json.createReader(new StringReader(value))) {
-            return ConnSpec.fromJson(reader.readObject());
-        }
+        JSONObject value = new JSONObject((Map)operand.get("connSpec"));
+        return ConnSpec.fromJson(value);
     }
 }

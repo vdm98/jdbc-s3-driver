@@ -1,7 +1,6 @@
 package ru.sbt.sup.jdbc.config;
 
-import javax.json.Json;
-import javax.json.JsonObject;
+import org.json.JSONObject;
 
 public class ConnSpec {
     private String accessKey;
@@ -32,16 +31,15 @@ public class ConnSpec {
         return region;
     }
 
-    public JsonObject toJson() {
-        return Json.createObjectBuilder()
-                .add("accessKey", accessKey)
-                .add("secretKey", secretKey)
-                .add("endpointUrl", endpointUrl)
-                .add("region", region)
-                .build();
+    public JSONObject toJson() {
+        return new JSONObject()
+                .put("accessKey", accessKey)
+                .put("secretKey", secretKey)
+                .put("endpointUrl", endpointUrl)
+                .put("region", region);
     }
 
-    public static ConnSpec fromJson(JsonObject object) {
+    public static ConnSpec fromJson(JSONObject object) {
         return new ConnSpec(
                 object.getString("accessKey"),
                 object.getString("secretKey"),

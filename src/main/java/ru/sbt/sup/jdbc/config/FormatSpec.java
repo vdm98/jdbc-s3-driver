@@ -1,7 +1,6 @@
 package ru.sbt.sup.jdbc.config;
 
-import javax.json.Json;
-import javax.json.JsonObject;
+import org.json.JSONObject;
 
 public class FormatSpec {
 
@@ -21,7 +20,7 @@ public class FormatSpec {
     private final String datetimePattern;
     private final String timestampPattern;
 
-    FormatSpec(JsonObject object) {
+    FormatSpec(JSONObject object) {
         this.delimiter = object.getString("delimiter").charAt(0);
         this.lineSeparator = object.getString("lineSeparator");
         this.quoteChar = object.getString("quoteChar").charAt(0);
@@ -51,24 +50,23 @@ public class FormatSpec {
         NEITHER
     }
 
-    JsonObject toJson() {
-        return Json.createObjectBuilder()
-                .add("delimiter", "" + delimiter)
-                .add("lineSeparator", lineSeparator)
-                .add("quoteChar", "" + quoteChar)
-                .add("escape", "" + escape)
-                .add("commentChar", "" + commentChar)
-                .add("header", header)
-                .add("strictQuotes", strictQuotes)
-                .add("ignoreLeadingWhiteSpace", ignoreLeadingWhiteSpace)
-                .add("ignoreQuotations", ignoreQuotations)
-                .add("nullFieldIndicator", nullFieldIndicator.name().toLowerCase())
-                .add("compression", compression.name().toLowerCase())
-                .add("datePattern", datePattern)
-                .add("timePattern", timePattern)
-                .add("datetimePattern", datetimePattern)
-                .add("timestampPattern", timestampPattern)
-                .build();
+    JSONObject toJson() {
+        return new JSONObject()
+                .put("delimiter", "" + delimiter)
+                .put("lineSeparator", lineSeparator)
+                .put("quoteChar", "" + quoteChar)
+                .put("escape", "" + escape)
+                .put("commentChar", "" + commentChar)
+                .put("header", header)
+                .put("strictQuotes", strictQuotes)
+                .put("ignoreLeadingWhiteSpace", ignoreLeadingWhiteSpace)
+                .put("ignoreQuotations", ignoreQuotations)
+                .put("nullFieldIndicator", nullFieldIndicator.name().toLowerCase())
+                .put("compression", compression.name().toLowerCase())
+                .put("datePattern", datePattern)
+                .put("timePattern", timePattern)
+                .put("datetimePattern", datetimePattern)
+                .put("timestampPattern", timestampPattern);
     }
 
     public char getDelimiter() {

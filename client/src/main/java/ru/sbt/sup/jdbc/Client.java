@@ -1,14 +1,8 @@
 package ru.sbt.sup.jdbc;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import ru.sbt.sup.jdbc.config.ConnSpec;
 import ru.sbt.sup.jdbc.config.TableSpec;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,7 +24,7 @@ public class Client {
             //"select * from emps e inner join depts d on d.id=e.deptid where d.name='Sales'";//" where id=1";
             //"select * from orders where country in ('Russia', 'Mexico', 'Australia') order by country";
             //"where country in ('Russia', 'Mexico', 'Australia') and p.name='Low'";
-            "select id, lastname, salary, hiredate from emps where id not in (1,3,5,7,9)";
+            "select id, firstname from emps";
             //" or hiredate between CAST('2020-09-01' AS DATE) and CAST('2020-11-01' AS DATE)";
             //"select id, firstname, lastname from people where id=1 or firstname='bbb' or firstname='ccc' order by id desc";
              //"select id, firstname, lastname from people where (not firstname like 'b%' or firstname='ccc' or firstname='ddd') and id>=3";
@@ -45,11 +39,9 @@ public class Client {
 //            "select avg(people.id) from people";
 
     public static void main(String[] args) throws IOException {
-        List<TableSpec> tableSpecs = TableSpec.generateTableSpecifications("emps", "depts");//orders", "priority");//""emps", "depts");//, "relationships");
-        ConnSpec connSpec = getConnProperties();
         int l = 0;
         StringBuffer result = new StringBuffer();
-        try (Connection connection = LakeDriver.getConnection(connSpec, tableSpecs)) {
+        try (Connection connection = ConnectionFactory.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(sqlScript)) {
                 ResultSetMetaData metaData = statement.getMetaData();
                 int limit = metaData.getColumnCount();
@@ -76,14 +68,5 @@ public class Client {
         logger.info("\n*** RESULT ***\n" + result);
     }
 
-    private static ConnSpec getConnProperties() throws IOException {
-        Properties appProps = new Properties();
-        Path inputConfig = Paths.get("src/main/resources/application.properties");
-        appProps.load(Files.newInputStream(inputConfig.toAbsolutePath()));
-        return new ConnSpec(
-                appProps.getProperty("accessKey"),
-                appProps.getProperty("secretKey"),
-                appProps.getProperty("endpointUrl"),
-                appProps.getProperty("region"));
-    }
+
 }

@@ -1,0 +1,58 @@
+{
+  "label": "emps",
+  "location": "s3://222/emps.csv",
+  "format": {
+    "delimiter": ",",
+    "lineSeparator": "\n",
+    "quoteChar": "\"",
+    "escape": "\\",
+    "commentChar": "#",
+    "header": false,
+    "strictQuotes": false,
+    "ignoreLeadingWhiteSpace": false,
+    "ignoreQuotations": false,
+    "nullFieldIndicator": "neither",
+    "compression": "none",
+    "datePattern": "dd.MM.yyyy",
+    "timePattern": "HH:mm:ss",
+    "datetimePattern": "dd.MM.yyyy HH:mm:ss",
+    "timestampPattern": "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+  },
+  "columns": [
+    {
+      "label": "id",
+      "datatype": "integer",
+      "nullable": false
+    },
+    {
+      "label": "firstname",
+      "datatype": "string",
+      "nullable": false
+    },
+    {
+      "label": "lastname",
+      "datatype": "string",
+      "nullable": false
+    },
+    {
+      "label": "birthdate",
+      "datatype": "date",
+      "nullable": false
+    },
+    {
+      "label": "salary",
+      "datatype": "double",
+      "nullable": false
+    },
+    {
+      "label": "hiredate",
+      "datatype": "date",
+      "nullable": false
+    },
+    {
+      "label": "deptid",
+      "datatype": "integer",
+      "nullable": false
+    }
+  ]
+}

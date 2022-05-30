@@ -1,5 +1,6 @@
 package ru.sbt.sup.jdbc;
 
+import org.json.JSONObject;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -17,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JdbcDriverTest {
 
-    private static final List<TableSpec> tableSpecs = TableSpec.generateTableSpecifications("emps", "depts", "orders");
+    private static final List<TableSpec> tableSpecs = generateTableSpecifications("emps", "depts", "orders");
 
     private static Stream<Arguments> inputProvider() {
         return Stream.of(
@@ -94,7 +95,7 @@ public class JdbcDriverTest {
     private static String executeTask(String query) throws IOException {
         ConnSpec connSpec = getConnProperties();
         StringBuffer result = new StringBuffer();
-        try (Connection connection = LakeDriver.getConnection(connSpec, tableSpecs)) {
+        try (Connection connection = getConnection(connSpec, tableSpecs)) {
             try (PreparedStatement statement = connection.prepareStatement(query)) {
                 ResultSetMetaData metaData = statement.getMetaData();
                 int limit = metaData.getColumnCount();
@@ -121,7 +122,28 @@ public class JdbcDriverTest {
         return result.toString();
     }
 
-    private static ConnSpec getConnProperties() throws IOException {
+    public static Connection getConnection(ConnSpec connSpec, List<TableSpec> tables) throws SQLException {
+//        JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
+//        tables.stream().map(TableSpec::toJson).forEach(jsonArrayBuilder::add);
+//        JsonArray build = jsonArrayBuilder.build();
+//        String tableSpecs = build.toString();
+//        String schemaFactoryName = LakeSchemaFactory.class.getName();
+//        JsonObject modelJson = Json.createObjectBuilder()
+//                .add("version", "1.0")
+//                .add("defaultSchema", "default")
+//                .add("schemas", Json.createArrayBuilder()
+//                        .add(Json.createObjectBuilder()
+//                                .add("name", "default")
+//                                .add("type", "custom")
+//                                .add("factory", schemaFactoryName)
+//                                .add("operand", Json.createObjectBuilder()
+//                                        .add("connSpec", connSpec.toJson().toString())
+//                                        .add("tableSpecs", tableSpecs))))
+//                .build();
+        return DriverManager.getConnection("jdbc:calcite:model=inline:");// + modelJson);
+    }
+
+        private static ConnSpec getConnProperties() throws IOException {
         Properties appProps = new Properties();
         Path inputConfig = Paths.get("src/main/resources/application.properties");
         appProps.load(Files.newInputStream(inputConfig.toAbsolutePath()));
@@ -130,5 +152,21 @@ public class JdbcDriverTest {
                 appProps.getProperty("secretKey"),
                 appProps.getProperty("endpointUrl"),
                 appProps.getProperty("region"));
+    }
+
+    public static List<TableSpec> generateTableSpecifications(String... keys) {
+        List<TableSpec> builder = new ArrayList<>();
+        for (String tableName : keys) {
+            Path inputConfig = Paths.get("src", "test", "resources", tableName + ".json");
+            try {
+                String content = new String(Files.readAllBytes(inputConfig));
+                JSONObject jsonObject = new JSONObject(content);
+                TableSpec spec = new TableSpec(jsonObject);
+                builder.add(spec);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return builder;
     }
 }

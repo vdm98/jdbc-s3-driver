@@ -1,7 +1,5 @@
 package ru.sbt.sup.jdbc;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import ru.sbt.sup.jdbc.config.ConnSpec;
 import ru.sbt.sup.jdbc.config.TableSpec;
 import javax.swing.*;
@@ -10,7 +8,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -94,18 +91,16 @@ public class SwingClient {
         panel.add(querySetCombobox);
 
         frame.setContentPane(panel);
-        frame.setSize(1168, 683);
+        frame.setSize(1168, 620);
         frame.setResizable(true);
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
-    private static Result executeQuery(String query) throws IOException {
-        List<TableSpec> tableSpecs = TableSpec.generateTableSpecifications("emps", "depts", "orders");
-        ConnSpec connSpec = getConnProperties();
+    private static Result executeQuery(String query) {
         ArrayList<String[]> rows = new ArrayList<>();
         Result result = new Result();
-        try (Connection connection = LakeDriver.getConnection(connSpec, tableSpecs)) {
+        try (Connection connection = ConnectionFactory.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(query)) {
                 ResultSetMetaData metaData = statement.getMetaData();
                 result.columns = getColumns(metaData);

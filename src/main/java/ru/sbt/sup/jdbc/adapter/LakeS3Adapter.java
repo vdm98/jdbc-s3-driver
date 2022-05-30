@@ -1,10 +1,6 @@
 package ru.sbt.sup.jdbc.adapter;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.model.*;
 import com.google.common.collect.Lists;
@@ -20,15 +16,10 @@ import org.apache.calcite.util.Sarg;
 import org.apache.calcite.util.TimestampString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import ru.sbt.sup.jdbc.Client;
 import ru.sbt.sup.jdbc.config.FormatSpec;
 import ru.sbt.sup.jdbc.config.TypeSpec;
 
 import java.io.InputStream;
-import java.net.URI;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -39,7 +30,7 @@ import static org.apache.calcite.sql.SqlKind.LITERAL;
 
 public class LakeS3Adapter {
 
-    private static final Logger logger = LogManager.getLogger(Client.class);
+    private static final Logger logger = LogManager.getLogger(LakeS3Adapter.class);
 
     private String query;
     private FormatSpec format;
