@@ -18,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import ru.sbt.sup.jdbc.config.FormatCSVSpec;
 import ru.sbt.sup.jdbc.config.FormatJsonSpec;
+import ru.sbt.sup.jdbc.config.TableSpec;
 import ru.sbt.sup.jdbc.config.TypeSpec;
 
 import java.io.InputStream;
@@ -40,24 +41,25 @@ public class LakeS3Adapter {
     private int[] projects;
     private AmazonS3URI s3Source;
     private AmazonS3 s3Client;
+    private TableSpec spec;
 
-    public LakeS3Adapter(AmazonS3 s3Client, AmazonS3URI s3Source, FormatCSVSpec formatCSV, FormatJsonSpec formatJson, TypeSpec[] types, int[] projects, List<RexNode> filters) {
+    public LakeS3Adapter(AmazonS3 s3Client, TableSpec spec, int[] projects, List<RexNode> filters) {
         if (filters.size()>0){
             logger.info("\nFilter size= " + filters.size()+"\nFilter [0]= " + filters.get(0).toString());
         }
-        this.formatCSV = formatCSV;
-        this.formatJson = formatJson;
-        this.types = types;
+        this.s3Source = new AmazonS3URI(spec.getLocation());
+        this.types = spec.getColumns().stream().map(c -> c.datatype).toArray(TypeSpec[]::new);
+        this.formatCSV = spec.getCSVFormat();
+        this.formatJson = spec.getJsonFormat();
         this.projects = projects;
-        this.s3Source = s3Source;
         this.s3Client = s3Client;
-        if (isCSVInputFormat()) {
-            this.query = compileQuery(projects, filters);
-        }
+        this.spec = spec;
+        this.query = compileQuery(projects, filters);
     }
 
     public String compileQuery(int[] projects, List<RexNode> filters) {
         return compileSelectFromClause(projects) + compileWhereClause(filters);
+//                ((isCSVInputFormat()) ? compileWhereClause(filters) : "");
     }
 
     private String compileWhereClause(List<RexNode> filters) {
@@ -213,16 +215,17 @@ public class LakeS3Adapter {
     }
 
     private String compileFieldName(RexNode field, RexNode value) {
-        int index = ((RexInputRef) field).getIndex() + 1;
+        int index = ((RexInputRef) field).getIndex();
+        String fieldRef = isCSVInputFormat() ? ("_" + (index + 1)) : ("s." + spec.getColumns().get(index).label);
         RexLiteral literal = (RexLiteral) value;
         if (SqlTypeName.DATETIME_TYPES.contains(literal.getTypeName())){
-            return "TO_TIMESTAMP("+"_" + index + ", '" + formatCSV.getDatePattern() + "')";
+            return "TO_TIMESTAMP(" + fieldRef + ", '" + formatCSV.getDatePattern() + "')";
         } else if (literal.getType().toString().startsWith("DECIMAL")){
-            return "CAST (_" + index + " AS DECIMAL)";
+            return "CAST (" + fieldRef + " AS DECIMAL)";
         }  else if (literal.getType().toString().equals("INTEGER")){
-            return "CAST (_" + index + " AS INTEGER)";
+            return "CAST (" + fieldRef + " AS INTEGER)";
         } else {
-            return "_" + index;
+            return fieldRef;
         }
     }
 
@@ -237,10 +240,17 @@ public class LakeS3Adapter {
     }
 
     private String compileSelectFromClause(int[] projects) {
-        String selectList = IntStream.of(projects).boxed()
-                .map(i -> i + 1).map(i -> "_" + i)
-                .collect(Collectors.joining(", "));
-        return String.format("SELECT %s FROM S3Object", selectList);
+        if (isCSVInputFormat()) {
+            String selectList = IntStream.of(projects).boxed()
+                    .map(i -> i + 1).map(i -> "_" + i)
+                    .collect(Collectors.joining(", "));
+            return String.format("SELECT %s FROM S3Object", selectList);
+        } else {
+            String selectList = IntStream.of(projects).boxed()
+                    .map(i -> "s."+spec.getColumns().get(i).label)
+                    .collect(Collectors.joining(", "));
+            return String.format("SELECT %s FROM %s s",  selectList, formatJson.getFromClause());
+        }
     }
 
     private void appendSargFieldName(Comparable endpoint, String fieldName, StringBuffer rangeStr) {
@@ -271,11 +281,10 @@ public class LakeS3Adapter {
         SelectObjectContentRequest request = new SelectObjectContentRequest();
         request.setBucketName(s3Source.getBucket());
         request.setKey(s3Source.getKey());
+        request.setExpression(query);
         if (isCSVInputFormat()){
-            request.setExpression(query);
             request.setInputSerialization(getInputSerialization(formatCSV));
         } else {
-            request.setExpression("SELECT * FROM " + formatJson.getFromClause());
             request.setInputSerialization(getJsonInputSerialization(formatJson));
         }
 

@@ -20,42 +20,42 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JdbcDriverTest {
 
-    private static final List<TableSpec> tables = generateTableSpecifications("emps", "depts", "orders");
+    private static final List<TableSpec> tables = generateTableSpecifications("emps", "depts", "orders", "empsj");
 
     private static Stream<Arguments> inputProvider() {
         return Stream.of(
-                // 1. Simple filter by primary key
+                // 1. CSV data. Simple filter by primary key.
                 Arguments.of(
                     "select id, firstname, lastname from emps where id=1",
                     // EXPECTED RESULT
                     "1,aaa,AAA\n"
                 ),
-                // 2. Filter with ORs
+                // 2. CSV data. Filter with ORs.
                 Arguments.of(
                     "select id, firstname, lastname from emps where id=1 or firstname='bbb' or firstname='ccc'",
                     // EXPECTED RESULT
                     "1,aaa,AAA\n2,bbb,BBB\n3,ccc,CCC\n"
                 ),
-                // 3. IN operator
+                // 3. CSV data. IN operator.
                 Arguments.of(
                     "select * from emps where id in (2,3)",
                     // EXPECTED RESULT
-                    "2,bbb,BBB,1992-01-02,1000.22,2020-02-02,10\n3,ccc,CCC,1993-01-02,1000.33,2020-03-03,20\n"
+                    "2,bbb,BBB,1992-01-02,1000.22,2020-02-02,10\n3,ccc,CCC,1993-01-03,1000.33,2020-03-03,20\n"
                 ),
-                // 4. AND, OR filters with PARENTHESES
+                // 4. CSV data. AND, OR filters with PARENTHESES.
                 Arguments.of(
                     "select id, firstname, lastname from emps where (firstname like 'b%' or firstname='ccc' or firstname='ddd') and id>=3",
                     // EXPECTED RESULT
                     "3,ccc,CCC\n4,ddd,DDD\n"
                 ),
-                // 5. JOIN tables, IN operator, DATE filter
+                // 5. CSV data. JOIN tables, IN operator, DATE filter.
                 Arguments.of(
                     "select e.id, e.lastname, e.hiredate, d.deptname from emps e inner join depts d on e.deptid = d.id " +
                     "where d.id in (10,20,30) and e.hiredate > CAST('2020-03-01' AS DATE)",
                     // EXPECTED RESULT
                     "3,CCC,2020-03-03,dept2\n4,DDD,2020-04-04,dept2\n5,EEE,2020-05-05,dept3\n6,FFF,2020-06-06,dept3\n"
                 ),
-                // 6. DATE range filter
+                // 6. CSV data. DATE range filter.
                 Arguments.of(
                     "select o.orderid, o.country, o.shipdate from orders o where o.shipdate > CAST('2012-01-20' AS DATE) and o.shipdate <= CAST('2014-07-05' AS DATE)",
                     // EXPECTED RESULT
@@ -64,7 +64,7 @@ public class JdbcDriverTest {
                     "115456712,Rwanda,2013-02-06\n" +
                     "871543967,Burkina Faso,2012-07-27\n"
                 ),
-                // 7. BETWEEN two decimals OR BETWEEN two dates
+                // 7. CSV data. BETWEEN two decimals OR BETWEEN two dates.
                 Arguments.of(
                     "select id, lastname, salary, hiredate from emps " +
                     "where salary between 1000.25 and 1000.65 " +
@@ -76,7 +76,7 @@ public class JdbcDriverTest {
                     "9,III,1000.99,2020-09-09\n" +
                     "10,JJJ,1000.0,2020-10-10\n"
                 ),
-                // 8. JOIN tables, GROUP BY, SUM operators
+                // 8. CSV data. JOIN tables, GROUP BY, SUM operators.
                 Arguments.of(
                     "select sum(e.salary), d.deptname " +
                     "from emps e inner join depts d on e.deptid = d.id " +
@@ -84,6 +84,58 @@ public class JdbcDriverTest {
                     "group by d.deptname",
                     // EXPECTED RESULT
                     "2000.33,dept1\n2000.77,dept2\n2001.21,dept3\n"
+                ),
+                // 9. Json data. Simple filter by primary key.
+                Arguments.of(
+                        "select id, firstname, lastname from empsj where id=1",
+                        // EXPECTED RESULT
+                        "1,aaa,AAA\n"
+                ),
+                // 10. Json data. Filter with ORs.
+                Arguments.of(
+                        "select id, firstname, lastname from empsj where id=1 or firstname='bbb' or firstname='ccc'",
+                        // EXPECTED RESULT
+                        "1,aaa,AAA\n2,bbb,BBB\n3,ccc,CCC\n"
+                ),
+                // 11. Json data. IN operator
+                Arguments.of(
+                        "select * from empsj where id in (2,3)",
+                        // EXPECTED RESULT
+                        "2,bbb,BBB,1992-01-02,1000.22,2020-02-02,10\n3,ccc,CCC,1993-01-03,1000.33,2020-03-03,20\n"
+                ),
+                // 12. Json data. AND, OR filters with PARENTHESES.
+                Arguments.of(
+                        "select id, firstname, lastname from empsj where (firstname like 'b%' or firstname='ccc' or firstname='ddd') and id>=3",
+                        // EXPECTED RESULT
+                        "3,ccc,CCC\n4,ddd,DDD\n"
+                ),
+                // 13. Json & CSV data. JOIN tables, IN operator, DATE filter.
+                Arguments.of(
+                        "select e.id, e.lastname, e.hiredate, d.deptname from empsj e inner join depts d on e.deptid = d.id " +
+                                "where d.id in (10,20,30) and e.hiredate > CAST('2020-03-01' AS DATE)",
+                        // EXPECTED RESULT
+                        "3,CCC,2020-03-03,dept2\n4,DDD,2020-04-04,dept2\n5,EEE,2020-05-05,dept3\n6,FFF,2020-06-06,dept3\n"
+                ),
+                // 14. Json data. BETWEEN two decimals OR BETWEEN two dates.
+                Arguments.of(
+                        "select id, lastname, salary, hiredate from empsj " +
+                                "where salary between 1000.25 and 1000.65 " +
+                                "or hiredate between CAST('2020-09-01' AS DATE) and CAST('2020-11-01' AS DATE)",
+                        // EXPECTED RESULT
+                        "3,CCC,1000.33,2020-03-03\n" +
+                                "4,DDD,1000.44,2020-04-04\n" +
+                                "5,EEE,1000.55,2020-05-05\n" +
+                                "9,III,1000.99,2020-09-09\n" +
+                                "10,JJJ,1000.0,2020-10-10\n"
+                ),
+                // 15. Json & CSV data. JOIN tables, GROUP BY, SUM operators.
+                Arguments.of(
+                        "select sum(e.salary), d.deptname " +
+                                "from empsj e inner join depts d on e.deptid = d.id " +
+                                "where d.id in (10,20,30) " +
+                                "group by d.deptname",
+                        // EXPECTED RESULT
+                        "2000.33,dept1\n2000.77,dept2\n2001.21,dept3\n"
                 ));
     }
 
@@ -145,21 +197,6 @@ public class JdbcDriverTest {
         return DriverManager.getConnection("jdbc:calcite:model=inline:" + model);
     }
 
-    private static ConnSpec getConnProperties() {
-        Properties appProps = new Properties();
-        Path inputConfig = Paths.get("src/test/resources/application.properties");
-        try {
-            appProps.load(Files.newInputStream(inputConfig.toAbsolutePath()));
-        } catch (IOException ex){
-            throw new RuntimeException(ex);
-        }
-        return new ConnSpec(
-                appProps.getProperty("accessKey"),
-                appProps.getProperty("secretKey"),
-                appProps.getProperty("endpointUrl"),
-                appProps.getProperty("region"));
-    }
-
     public static List<TableSpec> generateTableSpecifications(String... keys) {
         List<TableSpec> builder = new ArrayList<>();
         for (String tableName : keys) {
@@ -174,5 +211,20 @@ public class JdbcDriverTest {
             }
         }
         return builder;
+    }
+
+    private static ConnSpec getConnProperties() {
+        Properties appProps = new Properties();
+        Path inputConfig = Paths.get("src", "test", "resources", "application.properties");
+        try {
+            appProps.load(Files.newInputStream(inputConfig.toAbsolutePath()));
+        } catch (IOException ex){
+            throw new RuntimeException(ex);
+        }
+        return new ConnSpec(
+                appProps.getProperty("accessKey"),
+                appProps.getProperty("secretKey"),
+                appProps.getProperty("endpointUrl"),
+                appProps.getProperty("region"));
     }
 }

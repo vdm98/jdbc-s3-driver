@@ -1,15 +1,8 @@
 package ru.sbt.sup.jdbc;
 
-import ru.sbt.sup.jdbc.config.ConnSpec;
-import ru.sbt.sup.jdbc.config.TableSpec;
-
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.*;
 import java.util.*;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,7 +10,7 @@ public class Client {
 
     private static final Logger logger = LogManager.getLogger(Client.class);
 
-    private static String sqlScript = "select * from empsj";
+    private static String sqlScript = "select lastname, id from empsj where id=2";
 
 
     public static void main(String[] args) throws IOException {

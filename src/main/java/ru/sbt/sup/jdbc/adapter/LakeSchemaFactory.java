@@ -12,15 +12,8 @@ import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractSchema;
 import ru.sbt.sup.jdbc.config.ConnSpec;
 import ru.sbt.sup.jdbc.config.TableSpec;
-
-//import javax.json.Json;
-//import javax.json.JsonArray;
-//import javax.json.JsonObject;
-//import javax.json.JsonReader;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;

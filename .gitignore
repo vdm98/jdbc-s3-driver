@@ -2,4 +2,4 @@
 application.properties
 /target/
 /client/target/
-
+/client/src/script.py

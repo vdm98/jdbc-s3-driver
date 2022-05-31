@@ -47,9 +47,8 @@ public class LakeTable extends AbstractTable implements ProjectableFilterableTab
     public Enumerable<Object[]> scan(DataContext root, List<RexNode> filters, int[] projects) {
         final AtomicBoolean cancelFlag = DataContext.Variable.CANCEL_FLAG.get(root);
         projects = (projects == null) ? defaultProjects : projects;
-        AmazonS3URI s3Source = new AmazonS3URI(spec.getLocation());
-        TypeSpec[] fields = spec.getColumns().stream().map(c -> c.datatype).toArray(TypeSpec[]::new);
-        LakeS3Adapter scan = new LakeS3Adapter(s3Client, s3Source, spec.getCSVFormat(), spec.getJsonFormat(), fields, projects, filters);
+        LakeS3Adapter scan = new LakeS3Adapter(s3Client, spec, projects, filters);
+
         return new AbstractEnumerable<>() {
 
             public Enumerator<Object[]> enumerator() {

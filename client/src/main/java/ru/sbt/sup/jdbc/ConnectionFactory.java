@@ -20,13 +20,7 @@ import java.util.List;
 import java.util.Properties;
 
 public class ConnectionFactory {
-//    static {
-//        try {
-//            Class.forName("org.apache.calcite.jdbc.Driver");
-//        } catch (ClassNotFoundException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
+
 
     public static Connection getConnection() {
         List<TableSpec> tables = generateTableSpecifications("emps", "depts", "orders", "empsj");
@@ -69,7 +63,7 @@ public class ConnectionFactory {
     public static List<TableSpec> generateTableSpecifications(String... keys) {
         List<TableSpec> builder = new ArrayList<>();
         for (String tableName : keys) {
-            Path inputConfig = Paths.get("../src/test/resources/" + tableName + ".json");
+            Path inputConfig = Paths.get("..", "src", "test", "resources", tableName + ".json");
             try {
                 String content = new String(Files.readAllBytes(inputConfig));
                 JSONObject jsonObject = new JSONObject(content);
@@ -84,7 +78,7 @@ public class ConnectionFactory {
 
     private static ConnSpec getConnProperties() {
         Properties appProps = new Properties();
-        Path inputConfig = Paths.get("../src/test/resources/application.properties");
+        Path inputConfig = Paths.get("..", "src", "test", "resources", "application.properties");
         try {
             appProps.load(Files.newInputStream(inputConfig.toAbsolutePath()));
         } catch (IOException ex){
