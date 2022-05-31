@@ -3,7 +3,7 @@ package ru.sbt.sup.jdbc.adapter;
 import com.univocity.parsers.csv.CsvFormat;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
-import ru.sbt.sup.jdbc.config.FormatSpec;
+import ru.sbt.sup.jdbc.config.FormatCSVSpec;
 
 import java.io.Closeable;
 import java.io.InputStream;
@@ -15,7 +15,7 @@ public class CsvInputStreamParser implements Closeable {
     private final CsvParser parser;
     private final RowConverter converter;
 
-    public CsvInputStreamParser(FormatSpec spec, RowConverter converter, InputStream inputStream) {
+    public CsvInputStreamParser(FormatCSVSpec spec, RowConverter converter, InputStream inputStream) {
         CsvFormat format = new CsvFormat();
         format.setDelimiter(spec.getDelimiter());
         format.setLineSeparator(spec.getLineSeparator());

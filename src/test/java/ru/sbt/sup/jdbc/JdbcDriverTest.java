@@ -1,9 +1,11 @@
 package ru.sbt.sup.jdbc;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import ru.sbt.sup.jdbc.adapter.LakeSchemaFactory;
 import ru.sbt.sup.jdbc.config.ConnSpec;
 import ru.sbt.sup.jdbc.config.TableSpec;
 import java.io.IOException;
@@ -18,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JdbcDriverTest {
 
-    private static final List<TableSpec> tableSpecs = generateTableSpecifications("emps", "depts", "orders");
+    private static final List<TableSpec> tables = generateTableSpecifications("emps", "depts", "orders");
 
     private static Stream<Arguments> inputProvider() {
         return Stream.of(
@@ -93,9 +95,8 @@ public class JdbcDriverTest {
     }
 
     private static String executeTask(String query) throws IOException {
-        ConnSpec connSpec = getConnProperties();
         StringBuffer result = new StringBuffer();
-        try (Connection connection = getConnection(connSpec, tableSpecs)) {
+        try (Connection connection = getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(query)) {
                 ResultSetMetaData metaData = statement.getMetaData();
                 int limit = metaData.getColumnCount();
@@ -122,31 +123,36 @@ public class JdbcDriverTest {
         return result.toString();
     }
 
-    public static Connection getConnection(ConnSpec connSpec, List<TableSpec> tables) throws SQLException {
-//        JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
-//        tables.stream().map(TableSpec::toJson).forEach(jsonArrayBuilder::add);
-//        JsonArray build = jsonArrayBuilder.build();
-//        String tableSpecs = build.toString();
-//        String schemaFactoryName = LakeSchemaFactory.class.getName();
-//        JsonObject modelJson = Json.createObjectBuilder()
-//                .add("version", "1.0")
-//                .add("defaultSchema", "default")
-//                .add("schemas", Json.createArrayBuilder()
-//                        .add(Json.createObjectBuilder()
-//                                .add("name", "default")
-//                                .add("type", "custom")
-//                                .add("factory", schemaFactoryName)
-//                                .add("operand", Json.createObjectBuilder()
-//                                        .add("connSpec", connSpec.toJson().toString())
-//                                        .add("tableSpecs", tableSpecs))))
-//                .build();
-        return DriverManager.getConnection("jdbc:calcite:model=inline:");// + modelJson);
+    public static Connection getConnection() throws SQLException {
+        ConnSpec connSpec = getConnProperties();
+        String schemaFactoryName = LakeSchemaFactory.class.getName();
+
+        JSONArray tableSpecs = new JSONArray();
+        tables.stream().map(TableSpec::toJson).forEach(tableSpecs::put);
+
+        JSONObject model = new JSONObject()
+            .put("version", "1.0")
+            .put("defaultSchema", "default")
+            .put("schemas", new JSONArray()
+                .put(new JSONObject()
+                    .put("name", "default")
+                    .put("type", "custom")
+                    .put("factory", schemaFactoryName)
+                    .put("operand", new JSONObject()
+                        .put("connSpec", connSpec.toJson())
+                        .put("tableSpecs", tableSpecs))));
+
+        return DriverManager.getConnection("jdbc:calcite:model=inline:" + model);
     }
 
-        private static ConnSpec getConnProperties() throws IOException {
+    private static ConnSpec getConnProperties() {
         Properties appProps = new Properties();
-        Path inputConfig = Paths.get("src/main/resources/application.properties");
-        appProps.load(Files.newInputStream(inputConfig.toAbsolutePath()));
+        Path inputConfig = Paths.get("src/test/resources/application.properties");
+        try {
+            appProps.load(Files.newInputStream(inputConfig.toAbsolutePath()));
+        } catch (IOException ex){
+            throw new RuntimeException(ex);
+        }
         return new ConnSpec(
                 appProps.getProperty("accessKey"),
                 appProps.getProperty("secretKey"),

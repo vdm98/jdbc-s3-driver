@@ -28,7 +28,7 @@ public class LakeTable extends AbstractTable implements ProjectableFilterableTab
     LakeTable(AmazonS3 s3Client, TableSpec spec) {
         this.s3Client = s3Client;
         this.spec = spec;
-        this.columns = spec.columns.toArray(new ColumnSpec[0]);
+        this.columns = spec.getColumns().toArray(new ColumnSpec[0]);
         this.defaultProjects = IntStream.range(0, columns.length).toArray();
     }
 
@@ -47,15 +47,15 @@ public class LakeTable extends AbstractTable implements ProjectableFilterableTab
     public Enumerable<Object[]> scan(DataContext root, List<RexNode> filters, int[] projects) {
         final AtomicBoolean cancelFlag = DataContext.Variable.CANCEL_FLAG.get(root);
         projects = (projects == null) ? defaultProjects : projects;
-        AmazonS3URI s3Source = new AmazonS3URI(spec.location);
-        TypeSpec[] fields = spec.columns.stream().map(c -> c.datatype).toArray(TypeSpec[]::new);
-        LakeS3Adapter scan = new LakeS3Adapter(s3Client, s3Source, spec.format, fields, projects, filters);
+        AmazonS3URI s3Source = new AmazonS3URI(spec.getLocation());
+        TypeSpec[] fields = spec.getColumns().stream().map(c -> c.datatype).toArray(TypeSpec[]::new);
+        LakeS3Adapter scan = new LakeS3Adapter(s3Client, s3Source, spec.getCSVFormat(), spec.getJsonFormat(), fields, projects, filters);
         return new AbstractEnumerable<>() {
 
             public Enumerator<Object[]> enumerator() {
 
                 CsvInputStreamParser parser = new CsvInputStreamParser(
-                        scan.getFormat(),
+                        scan.getCSVFormat(),
                         scan.getRowConverter(),
                         scan.getS3Result());
 

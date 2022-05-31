@@ -1,7 +1,7 @@
 {
   "label": "emps",
-  "location": "s3://222/emps.csv",
-  "format": {
+  "location": "s3://vadimakh/emps.csv",
+  "formatCSV": {
     "delimiter": ",",
     "lineSeparator": "\n",
     "quoteChar": "\"",

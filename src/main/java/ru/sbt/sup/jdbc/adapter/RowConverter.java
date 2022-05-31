@@ -1,22 +1,20 @@
 package ru.sbt.sup.jdbc.adapter;
 
-import ru.sbt.sup.jdbc.config.FormatSpec;
+import ru.sbt.sup.jdbc.config.FormatCSVSpec;
 import ru.sbt.sup.jdbc.config.TypeSpec;
 
-import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Date;
-import java.util.Locale;
 
 public class RowConverter {
 
-    private final FormatSpec formatSpec;
+    private final FormatCSVSpec formatCSVSpec;
     private final TypeSpec[] projectedFieldTypes;
 
-    public RowConverter(FormatSpec formatSpec, TypeSpec[] projectedFieldTypes) {
-        this.formatSpec = formatSpec;
+    public RowConverter(FormatCSVSpec formatCSVSpec, TypeSpec[] projectedFieldTypes) {
+        this.formatCSVSpec = formatCSVSpec;
         this.projectedFieldTypes = projectedFieldTypes;
     }
 
@@ -45,7 +43,7 @@ public class RowConverter {
             case DOUBLE:
                 return Double.parseDouble(value);
             case DATE: {
-                LocalDate ld = LocalDate.parse(value, DateTimeFormatter.ofPattern(formatSpec.getDatePattern()));
+                LocalDate ld = LocalDate.parse(value, DateTimeFormatter.ofPattern(formatCSVSpec.getDatePattern()));
                 return Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant());
             }
             case TIME:

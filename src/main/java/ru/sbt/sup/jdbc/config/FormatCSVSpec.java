@@ -2,7 +2,7 @@ package ru.sbt.sup.jdbc.config;
 
 import org.json.JSONObject;
 
-public class FormatSpec {
+public class FormatCSVSpec {
 
     private final char delimiter;
     private final String lineSeparator;
@@ -20,7 +20,7 @@ public class FormatSpec {
     private final String datetimePattern;
     private final String timestampPattern;
 
-    FormatSpec(JSONObject object) {
+    FormatCSVSpec(JSONObject object) {
         this.delimiter = object.getString("delimiter").charAt(0);
         this.lineSeparator = object.getString("lineSeparator");
         this.quoteChar = object.getString("quoteChar").charAt(0);

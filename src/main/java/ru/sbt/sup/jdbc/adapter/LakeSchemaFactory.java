@@ -59,7 +59,7 @@ public class LakeSchemaFactory implements SchemaFactory {
                         .map(v -> new JSONObject((Map)v))
                         .map(TableSpec::new)
                         .collect(Collectors.toMap(
-                                spec -> spec.label.toUpperCase(),
+                                spec -> spec.getLabel().toUpperCase(),
                                 spec -> new LakeTable(s3Client,  spec)));
                 return tableMap;
             }

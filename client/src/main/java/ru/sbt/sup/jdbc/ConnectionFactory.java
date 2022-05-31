@@ -29,7 +29,7 @@ public class ConnectionFactory {
 //    }
 
     public static Connection getConnection() {
-        List<TableSpec> tables = generateTableSpecifications("emps");//, "depts", "orders");
+        List<TableSpec> tables = generateTableSpecifications("emps", "depts", "orders", "empsj");
         ConnSpec connSpec = getConnProperties();
         String schemaFactoryName = LakeSchemaFactory.class.getName();
 
@@ -69,7 +69,7 @@ public class ConnectionFactory {
     public static List<TableSpec> generateTableSpecifications(String... keys) {
         List<TableSpec> builder = new ArrayList<>();
         for (String tableName : keys) {
-            Path inputConfig = Paths.get("src", "main", "resources", tableName + ".json");
+            Path inputConfig = Paths.get("../src/test/resources/" + tableName + ".json");
             try {
                 String content = new String(Files.readAllBytes(inputConfig));
                 JSONObject jsonObject = new JSONObject(content);
@@ -84,7 +84,7 @@ public class ConnectionFactory {
 
     private static ConnSpec getConnProperties() {
         Properties appProps = new Properties();
-        Path inputConfig = Paths.get("src/main/resources/application.properties");
+        Path inputConfig = Paths.get("../src/test/resources/application.properties");
         try {
             appProps.load(Files.newInputStream(inputConfig.toAbsolutePath()));
         } catch (IOException ex){

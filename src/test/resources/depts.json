@@ -1,7 +1,7 @@
 {
   "label": "depts",
-  "location": "s3://222/depts.csv",
-  "format": {
+  "location": "s3://vadimakh/depts.csv",
+  "formatCSV": {
     "delimiter": ",",
     "lineSeparator": "\n",
     "quoteChar": "\"",

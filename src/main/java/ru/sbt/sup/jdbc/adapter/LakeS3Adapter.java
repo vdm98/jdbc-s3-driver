@@ -16,7 +16,8 @@ import org.apache.calcite.util.Sarg;
 import org.apache.calcite.util.TimestampString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import ru.sbt.sup.jdbc.config.FormatSpec;
+import ru.sbt.sup.jdbc.config.FormatCSVSpec;
+import ru.sbt.sup.jdbc.config.FormatJsonSpec;
 import ru.sbt.sup.jdbc.config.TypeSpec;
 
 import java.io.InputStream;
@@ -33,23 +34,26 @@ public class LakeS3Adapter {
     private static final Logger logger = LogManager.getLogger(LakeS3Adapter.class);
 
     private String query;
-    private FormatSpec format;
+    private FormatCSVSpec formatCSV;
+    private FormatJsonSpec formatJson;
     private TypeSpec[] types;
     private int[] projects;
     private AmazonS3URI s3Source;
     private AmazonS3 s3Client;
 
-    public LakeS3Adapter(AmazonS3 s3Client, AmazonS3URI s3Source, FormatSpec format, TypeSpec[] types, int[] projects, List<RexNode> filters) {
+    public LakeS3Adapter(AmazonS3 s3Client, AmazonS3URI s3Source, FormatCSVSpec formatCSV, FormatJsonSpec formatJson, TypeSpec[] types, int[] projects, List<RexNode> filters) {
         if (filters.size()>0){
             logger.info("\nFilter size= " + filters.size()+"\nFilter [0]= " + filters.get(0).toString());
         }
-        this.format = format;
+        this.formatCSV = formatCSV;
+        this.formatJson = formatJson;
         this.types = types;
         this.projects = projects;
         this.s3Source = s3Source;
         this.s3Client = s3Client;
-        this.query = compileQuery(projects, filters);
-        logger.info("S3 Query= " + query + "\n");
+        if (isCSVInputFormat()) {
+            this.query = compileQuery(projects, filters);
+        }
     }
 
     public String compileQuery(int[] projects, List<RexNode> filters) {
@@ -212,7 +216,7 @@ public class LakeS3Adapter {
         int index = ((RexInputRef) field).getIndex() + 1;
         RexLiteral literal = (RexLiteral) value;
         if (SqlTypeName.DATETIME_TYPES.contains(literal.getTypeName())){
-            return "TO_TIMESTAMP("+"_" + index + ", '" + format.getDatePattern() + "')";
+            return "TO_TIMESTAMP("+"_" + index + ", '" + formatCSV.getDatePattern() + "')";
         } else if (literal.getType().toString().startsWith("DECIMAL")){
             return "CAST (_" + index + " AS DECIMAL)";
         }  else if (literal.getType().toString().equals("INTEGER")){
@@ -241,7 +245,7 @@ public class LakeS3Adapter {
 
     private void appendSargFieldName(Comparable endpoint, String fieldName, StringBuffer rangeStr) {
         if (endpoint instanceof TimestampString) {
-            rangeStr.append("TO_TIMESTAMP(" + fieldName + ", '" + format.getDatePattern() + "')");
+            rangeStr.append("TO_TIMESTAMP(" + fieldName + ", '" + formatCSV.getDatePattern() + "')");
         } else {
             rangeStr.append(fieldName);
         }
@@ -260,24 +264,35 @@ public class LakeS3Adapter {
         TypeSpec[] projectedTypes = IntStream.of(projects).boxed()
                 .map(i -> types[i])
                 .toArray(TypeSpec[]::new);
-        return new RowConverter(format, projectedTypes);
+        return new RowConverter(formatCSV, projectedTypes);
     }
 
     public InputStream getS3Result() {
         SelectObjectContentRequest request = new SelectObjectContentRequest();
         request.setBucketName(s3Source.getBucket());
         request.setKey(s3Source.getKey());
-        request.setExpression(query);
-        //request.setExpression("select * from S3Object[*][*] s"); // <-- working example on people.json aws
-        //request.setExpression("SELECT _1, _2, _3 FROM S3Object WHERE CAST(_1 AS INTEGER) = 1");
-        //request.setExpression("SELECT _1, _2, _3 FROM S3Object WHERE (_2 like 'b%' OR _2 in ('ccc','ddd')) AND _1 > 2");
-        //request.setExpression("SELECT _7, _2, _8 FROM S3Object WHERE CAST('2020-01-01T' AS TIMESTAMP) < CAST('2021-01-01T' AS TIMESTAMP)");
-        //request.setExpression("SELECT _7, _2, _8 FROM S3Object WHERE TO_TIMESTAMP(_8, 'M/d/y') > TO_TIMESTAMP('2014-01-20 00:00:00', 'y-M-d H:m:ss')");
+        if (isCSVInputFormat()){
+            request.setExpression(query);
+            request.setInputSerialization(getInputSerialization(formatCSV));
+        } else {
+            request.setExpression("SELECT * FROM " + formatJson.getFromClause());
+            request.setInputSerialization(getJsonInputSerialization(formatJson));
+        }
+
+//        request.setExpression("select * from S3Object[*][*] s"); // <-- correct for empsd.json
+//        request.setExpression("SELECT _1.id, _1.expr FROM S3Object[*].Rules[*] where _1.id in ('1', '3')"); // <-- correct for rules.json
+//        request.setExpression("SELECT id FROM S3Object[*].id"); // <-- correct for rules.json
+//        request.setExpression("SELECT d.dir_name, d.files FROM S3Object[*] d");
+//        request.setExpression("SELECT _1, _2, _3 FROM S3Object WHERE CAST(_1 AS INTEGER) = 1");
+//        request.setExpression("SELECT _1, _2, _3 FROM S3Object WHERE (_2 like 'b%' OR _2 in ('ccc','ddd')) AND _1 > 2");
+//        request.setExpression("SELECT _7, _2, _8 FROM S3Object WHERE CAST('2020-01-01T' AS TIMESTAMP) < CAST('2021-01-01T' AS TIMESTAMP)");
+//        request.setExpression("SELECT _7, _2, _8 FROM S3Object WHERE TO_TIMESTAMP(_8, 'M/d/y') > TO_TIMESTAMP('2014-01-20 00:00:00', 'y-M-d H:m:ss')");
+
         request.setExpressionType(ExpressionType.SQL);
-        request.setInputSerialization(getInputSerialization(format));
-        //request.setInputSerialization(getJsonInputSerialization(format));
-        request.setOutputSerialization(getOutputSerialization(format));
+        request.setOutputSerialization(getOutputSerialization(formatCSV));
         SelectObjectContentResult result = s3Client.selectObjectContent(request);
+
+        logger.info("S3 query: " + request.getExpression());
         SelectObjectContentEventStream payload = result.getPayload();
 //        try {
 //            logger.info("inputstream result= " + new String(payload.getRecordsInputStream().readAllBytes()));
@@ -288,7 +303,7 @@ public class LakeS3Adapter {
         return payload.getRecordsInputStream();
     }
 
-    private static InputSerialization getInputSerialization(FormatSpec spec) {
+    private static InputSerialization getInputSerialization(FormatCSVSpec spec) {
         CSVInput csvInput = new CSVInput();
         csvInput.setFieldDelimiter(spec.getDelimiter());
         csvInput.setRecordDelimiter(spec.getLineSeparator());
@@ -309,7 +324,7 @@ public class LakeS3Adapter {
         return inputSerialization;
     }
 
-    private static InputSerialization getJsonInputSerialization(FormatSpec spec) {
+    private static InputSerialization getJsonInputSerialization(FormatJsonSpec spec) {
         JSONInput jsonInput = new JSONInput();
         jsonInput.setType(JSONType.DOCUMENT);
         InputSerialization inputSerialization = new InputSerialization();
@@ -325,7 +340,7 @@ public class LakeS3Adapter {
         return inputSerialization;
     }
 
-    private static OutputSerialization getOutputSerialization(FormatSpec spec) {
+    private static OutputSerialization getOutputSerialization(FormatCSVSpec spec) {
         CSVOutput csvOutput = new CSVOutput();
         csvOutput.setFieldDelimiter(spec.getDelimiter());
         csvOutput.setRecordDelimiter(spec.getLineSeparator());
@@ -336,5 +351,10 @@ public class LakeS3Adapter {
         return outputSerialization;
     }
 
-    public FormatSpec getFormat() { return format; }
+    public FormatCSVSpec getCSVFormat() { return formatCSV; }
+    public FormatJsonSpec getJsonFormat() { return formatJson; }
+
+    public boolean isCSVInputFormat(){
+        return formatJson == null;
+    }
 }
