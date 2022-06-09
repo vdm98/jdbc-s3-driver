@@ -4,7 +4,7 @@
       "firstname":"aaa",
       "lastname":"AAA",
       "birthdate":"01.01.1991",
-      "salary":1000.11,
+      "salary":1000.00,
       "hiredate":"01.01.2020",
       "deptid":10
    },
@@ -13,7 +13,7 @@
       "firstname":"bbb",
       "lastname":"BBB",
       "birthdate":"02.01.1992",
-      "salary":1000.22,
+      "salary":2000.00,
       "hiredate":"02.02.2020",
       "deptid":10
    },
@@ -22,7 +22,7 @@
       "firstname":"ccc",
       "lastname":"CCC",
       "birthdate":"03.01.1993",
-      "salary":1000.33,
+      "salary":3000.00,
       "hiredate":"03.03.2020",
       "deptid":20
    },
@@ -31,7 +31,7 @@
       "firstname":"ddd",
       "lastname":"DDD",
       "birthdate":"04.01.1994",
-      "salary":1000.44,
+      "salary":3000.00,
       "hiredate":"04.04.2020",
       "deptid":20
    },
@@ -40,7 +40,7 @@
       "firstname":"eee",
       "lastname":"EEE",
       "birthdate":"05.01.1995",
-      "salary":1000.55,
+      "salary":1500.00,
       "hiredate":"05.05.2020",
       "deptid":30
    },
@@ -49,7 +49,7 @@
       "firstname":"fff",
       "lastname":"FFF",
       "birthdate":"06.01.1996",
-      "salary":1000.66,
+      "salary":1500.00,
       "hiredate":"06.06.2020",
       "deptid":30
    },
@@ -58,7 +58,7 @@
       "firstname":"ggg",
       "lastname":"GGG",
       "birthdate":"07.01.1997",
-      "salary":1000.77,
+      "salary":4000.00,
       "hiredate":"07.07.2020",
       "deptid":40
    },
@@ -67,7 +67,7 @@
       "firstname":"hhh",
       "lastname":"HHH",
       "birthdate":"08.01.1998",
-      "salary":1000.88,
+      "salary":4000.00,
       "hiredate":"08.08.2020",
       "deptid":40
    },
@@ -76,7 +76,7 @@
       "firstname":"iii",
       "lastname":"III",
       "birthdate":"09.01.1999",
-      "salary":1000.99,
+      "salary":2500.00,
       "hiredate":"09.09.2020",
       "deptid":50
    },
@@ -85,7 +85,7 @@
       "firstname":"jjj",
       "lastname":"JJJ",
       "birthdate":"10.01.2000",
-      "salary":1000.00,
+      "salary":2500.00,
       "hiredate":"10.10.2020",
       "deptid":50
    }

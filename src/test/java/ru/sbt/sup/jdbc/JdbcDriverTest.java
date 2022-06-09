@@ -40,7 +40,7 @@ public class JdbcDriverTest {
                 Arguments.of(
                     "select * from emps where id in (2,3)",
                     // EXPECTED RESULT
-                    "2,bbb,BBB,1992-01-02,1000.22,2020-02-02,10\n3,ccc,CCC,1993-01-03,1000.33,2020-03-03,20\n"
+                    "2,bbb,BBB,1992-01-02,2000.0,2020-02-02,10\n3,ccc,CCC,1993-01-03,3000.0,2020-03-03,20\n"
                 ),
                 // 4. CSV data. AND, OR filters with PARENTHESES.
                 Arguments.of(
@@ -67,14 +67,13 @@ public class JdbcDriverTest {
                 // 7. CSV data. BETWEEN two decimals OR BETWEEN two dates.
                 Arguments.of(
                     "select id, lastname, salary, hiredate from emps " +
-                    "where salary between 1000.25 and 1000.65 " +
-                    "or hiredate between CAST('2020-09-01' AS DATE) and CAST('2020-11-01' AS DATE)",
+                    "where salary between 3500.0 and 4500.0 " +
+                    "or hiredate between CAST('2020-03-01' AS DATE) and CAST('2020-05-01' AS DATE)",
                     // EXPECTED RESULT
-                    "3,CCC,1000.33,2020-03-03\n" +
-                    "4,DDD,1000.44,2020-04-04\n" +
-                    "5,EEE,1000.55,2020-05-05\n" +
-                    "9,III,1000.99,2020-09-09\n" +
-                    "10,JJJ,1000.0,2020-10-10\n"
+                    "3,CCC,3000.0,2020-03-03\n" +
+                    "4,DDD,3000.0,2020-04-04\n" +
+                    "7,GGG,4000.0,2020-07-07\n" +
+                    "8,HHH,4000.0,2020-08-08\n"
                 ),
                 // 8. CSV data. JOIN tables, GROUP BY, SUM operators.
                 Arguments.of(
@@ -83,7 +82,7 @@ public class JdbcDriverTest {
                     "where d.id in (10,20,30) " +
                     "group by d.deptname",
                     // EXPECTED RESULT
-                    "2000.33,dept1\n2000.77,dept2\n2001.21,dept3\n"
+                    "3000.0,dept1\n6000.0,dept2\n3000.0,dept3\n"
                 ),
                 // 9. Json data. Simple filter by primary key.
                 Arguments.of(
@@ -101,7 +100,7 @@ public class JdbcDriverTest {
                 Arguments.of(
                         "select * from empsj where id in (2,3)",
                         // EXPECTED RESULT
-                        "2,bbb,BBB,1992-01-02,1000.22,2020-02-02,10\n3,ccc,CCC,1993-01-03,1000.33,2020-03-03,20\n"
+                        "2,bbb,BBB,1992-01-02,2000.0,2020-02-02,10\n3,ccc,CCC,1993-01-03,3000.0,2020-03-03,20\n"
                 ),
                 // 12. Json data. AND, OR filters with PARENTHESES.
                 Arguments.of(
@@ -119,23 +118,22 @@ public class JdbcDriverTest {
                 // 14. Json data. BETWEEN two decimals OR BETWEEN two dates.
                 Arguments.of(
                         "select id, lastname, salary, hiredate from empsj " +
-                                "where salary between 1000.25 and 1000.65 " +
-                                "or hiredate between CAST('2020-09-01' AS DATE) and CAST('2020-11-01' AS DATE)",
+                        "where salary between 3500.0 and 4500.0 " +
+                        "or hiredate between CAST('2020-03-01' AS DATE) and CAST('2020-05-01' AS DATE)",
                         // EXPECTED RESULT
-                        "3,CCC,1000.33,2020-03-03\n" +
-                                "4,DDD,1000.44,2020-04-04\n" +
-                                "5,EEE,1000.55,2020-05-05\n" +
-                                "9,III,1000.99,2020-09-09\n" +
-                                "10,JJJ,1000.0,2020-10-10\n"
+                        "3,CCC,3000.0,2020-03-03\n" +
+                        "4,DDD,3000.0,2020-04-04\n" +
+                        "7,GGG,4000.0,2020-07-07\n" +
+                        "8,HHH,4000.0,2020-08-08\n"
                 ),
                 // 15. Json & CSV data. JOIN tables, GROUP BY, SUM operators.
                 Arguments.of(
                         "select sum(e.salary), d.deptname " +
-                                "from empsj e inner join depts d on e.deptid = d.id " +
-                                "where d.id in (10,20,30) " +
-                                "group by d.deptname",
+                        "from empsj e inner join depts d on e.deptid = d.id " +
+                        "where d.id in (10,20,30) " +
+                        "group by d.deptname",
                         // EXPECTED RESULT
-                        "2000.33,dept1\n2000.77,dept2\n2001.21,dept3\n"
+                        "3000.0,dept1\n6000.0,dept2\n3000.0,dept3\n"
                 ));
     }
 

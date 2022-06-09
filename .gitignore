@@ -3,3 +3,8 @@ application.properties
 /target/
 /client/target/
 /client/src/script.py
+/client/src/jdbc_s3.py
+/src/test/resources/test_json.py
+/client/src/main/resources/test_json.py
+/client/src/main/script.py
+/client/src/main/test_json.py
