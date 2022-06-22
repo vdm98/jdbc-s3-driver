@@ -3,6 +3,7 @@ package ru.sbt.sup.jdbc.adapter;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.model.*;
+import com.google.common.collect.BoundType;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import org.apache.calcite.plan.RelOptUtil;
@@ -159,25 +160,28 @@ public class LakeS3Adapter {
             fieldName = compileFieldName(left, right);
             RexLiteral rlit = (RexLiteral) right;
             if (CalciteUtils.isSarg(rlit)){
-                // in operator
                 List<Object> sargList = CalciteUtils.sargValue(rlit);
                 if (!sargList.isEmpty()) {
+                    // IN operator will be used when the set of arguments (Sarg) are points, e.g. Sarg[3, 7] will be compiled to IN (3, 7)
                     List inList = Lists.transform(sargList, Object::toString);
                     literal = String.join(",", inList);
-                    return Optional.of(String.format("%s %s (%s)", fieldName, "in", literal));
+                    String notOp = CalciteUtils.isComplementedSarg(rlit)? "NOT ": "";
+                    return Optional.of(notOp+String.format("%s %s (%s)", fieldName, "IN", literal));
                 } else {
-                    // ranges
+                    // Sarg ranges e.g. [3..7] will be compiled to two condition operators with lower and upper bounds
                     final Sarg sarg = rlit.getValueAs(Sarg.class);
                     Set<Range> ranges = sarg.rangeSet.asRanges();
                     StringBuffer rangeStr = new StringBuffer();
                     ranges.forEach(range -> {
                         if (rangeStr.length() > 0) rangeStr.append(" AND ");
                         appendSargFieldName(range.lowerEndpoint(), fieldName, rangeStr);
-                        rangeStr.append(" > ");
+                        rangeStr.append(" >");
+                        rangeStr.append(range.lowerBoundType()== BoundType.CLOSED?"= ":" ");
                         appendSargFieldValue(range.lowerEndpoint(), rangeStr);
                         rangeStr.append(" AND ");
                         appendSargFieldName(range.upperEndpoint(), fieldName, rangeStr);
-                        rangeStr.append(" < ");
+                        rangeStr.append(" <");
+                        rangeStr.append(range.upperBoundType()== BoundType.CLOSED?"= ":" ");
                         appendSargFieldValue(range.upperEndpoint(), rangeStr);
                     });
                     return Optional.of(rangeStr.toString());
@@ -236,7 +240,7 @@ public class LakeS3Adapter {
         } else if (SqlTypeName.DATETIME_TYPES.contains(literal.getTypeName())){
             return "TO_TIMESTAMP('" + literal.toString().replaceAll("/","-")+"', 'y-M-d H:m:ss')";
         }
-        return literal.getValue().toString(); // was getValue2 !!!!!!!!!!
+        return literal.getValue().toString();
     }
 
     private String compileSelectFromClause(int[] projects) {
@@ -288,6 +292,7 @@ public class LakeS3Adapter {
             request.setInputSerialization(getJsonInputSerialization(formatJson));
         }
 
+//        request.setExpression("SELECT _1, _2, _3, _4, _5, _6, _7 FROM S3Object WHERE CAST (_1 AS INTEGER) NOT in (1,3)");
 //        request.setExpression("select * from S3Object[*][*] s"); // <-- correct for empsd.json
 //        request.setExpression("SELECT _1.id, _1.expr FROM S3Object[*].Rules[*] where _1.id in ('1', '3')"); // <-- correct for rules.json
 //        request.setExpression("SELECT id FROM S3Object[*].id"); // <-- correct for rules.json
@@ -299,9 +304,8 @@ public class LakeS3Adapter {
 
         request.setExpressionType(ExpressionType.SQL);
         request.setOutputSerialization(getOutputSerialization(formatCSV));
-        SelectObjectContentResult result = s3Client.selectObjectContent(request);
-
         logger.info("S3 query: " + request.getExpression());
+        SelectObjectContentResult result = s3Client.selectObjectContent(request);
         SelectObjectContentEventStream payload = result.getPayload();
 //        try {
 //            logger.info("inputstream result= " + new String(payload.getRecordsInputStream().readAllBytes()));

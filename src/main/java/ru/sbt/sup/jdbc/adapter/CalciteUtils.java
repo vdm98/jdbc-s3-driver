@@ -46,4 +46,9 @@ public class CalciteUtils {
                 return point;
         }
     }
+
+    public static boolean isComplementedSarg(RexLiteral literal) {
+        final Sarg sarg = literal.getValueAs(Sarg.class);
+        return sarg.isComplementedPoints();
+    }
 }

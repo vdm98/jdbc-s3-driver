@@ -61,6 +61,7 @@ public class JdbcDriverTest {
                     // EXPECTED RESULT
                     "963881480,Grenada,2012-09-15\n" +
                     "341417157,Russia,2014-05-08\n" +
+                    "514321792,Sao Tome and Principe,2014-07-05\n" +
                     "115456712,Rwanda,2013-02-06\n" +
                     "871543967,Burkina Faso,2012-07-27\n"
                 ),
