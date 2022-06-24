@@ -37,7 +37,7 @@ public class CalciteUtils {
         return values;
     }
 
-    private static Object sargPointValue(Object point, SqlTypeName sqlTypeName) {
+    protected static Object sargPointValue(Object point, SqlTypeName sqlTypeName) {
         switch (sqlTypeName) {
             case CHAR:
             case VARCHAR:

@@ -18,10 +18,10 @@ public enum TypeSpec {
     LONG(Long.class, "long"),
     FLOAT(Float.class, "float"),
     DOUBLE(Double.class, "double"),
-    DATE(java.util.Date.class, "date"),
+    DATE(java.sql.Date.class, "date"),
     TIME(java.util.Date.class, "time"),
     DATETIME(java.util.Date.class, "datetime"),
-    TIMESTAMP(java.time.Instant.class, "timestamp");
+    TIMESTAMP(java.util.Date.class, "timestamp");
 
     private final Class clazz;
     private final String stringName;

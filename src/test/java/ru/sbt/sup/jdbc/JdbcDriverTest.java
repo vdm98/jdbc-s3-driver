@@ -159,6 +159,9 @@ public class JdbcDriverTest {
                             if (metaData.getColumnType(i) == Types.TIMESTAMP){
                                 Calendar tzCal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
                                 value = resultSet.getDate(i, tzCal).toString();
+                            } else if (metaData.getColumnType(i) == Types.DATE){
+                                Calendar tzCal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+                                value = resultSet.getDate(i, tzCal).toString();
                             } else {
                                 value = resultSet.getString(i);
                             }

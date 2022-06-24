@@ -3,6 +3,8 @@ package ru.sbt.sup.jdbc.adapter;
 import ru.sbt.sup.jdbc.config.FormatCSVSpec;
 import ru.sbt.sup.jdbc.config.TypeSpec;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -18,7 +20,7 @@ public class RowConverter {
         this.projectedFieldTypes = projectedFieldTypes;
     }
 
-    Object convertField(TypeSpec type, String value) throws NumberFormatException, DateTimeParseException {
+    Object convertField(TypeSpec type, String value) {
         switch (type) {
             case STRING:
                 return value;
@@ -43,15 +45,30 @@ public class RowConverter {
             case DOUBLE:
                 return Double.parseDouble(value);
             case DATE: {
-                LocalDate ld = LocalDate.parse(value, DateTimeFormatter.ofPattern(formatCSVSpec.getDatePattern()));
-                return Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant());
+                try {
+                    return new java.sql.Date(new SimpleDateFormat(formatCSVSpec.getDatePattern()).parse(value).getTime());
+                } catch (ParseException e){
+                    throw new RuntimeException(e);
+                }
             }
             case TIME:
-                return DateTimeFormatter.ISO_LOCAL_TIME.parse(value, LocalTime::from);
+                try {
+                    return new SimpleDateFormat(formatCSVSpec.getTimePattern()).parse(value);
+                } catch (ParseException e){
+                    throw new RuntimeException(e);
+                }
             case DATETIME:
-                return DateTimeFormatter.ISO_LOCAL_DATE_TIME.parse(value, LocalDateTime::from);
+                try {
+                    return new SimpleDateFormat(formatCSVSpec.getDatetimePattern()).parse(value);
+                } catch (ParseException e){
+                    throw new RuntimeException(e);
+                }
             case TIMESTAMP:
-                return DateTimeFormatter.ISO_INSTANT.parse(value, Instant::from);
+                try {
+                    return new SimpleDateFormat(formatCSVSpec.getTimestampPattern()).parse(value);
+                } catch (ParseException e){
+                    throw new RuntimeException(e);
+                }
             default:
                 throw new IllegalArgumentException("invalid field type: " + type);
         }

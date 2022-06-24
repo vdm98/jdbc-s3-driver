@@ -13,6 +13,7 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.DateString;
 import org.apache.calcite.util.Sarg;
 import org.apache.calcite.util.TimestampString;
 import org.apache.logging.log4j.LogManager;
@@ -159,6 +160,7 @@ public class LakeS3Adapter {
         if (op.equals("search")){
             fieldName = compileFieldName(left, right);
             RexLiteral rlit = (RexLiteral) right;
+            SqlTypeName sqlTypeName = rlit.getType().getSqlTypeName();
             if (CalciteUtils.isSarg(rlit)){
                 List<Object> sargList = CalciteUtils.sargValue(rlit);
                 if (!sargList.isEmpty()) {
@@ -177,12 +179,12 @@ public class LakeS3Adapter {
                         appendSargFieldName(range.lowerEndpoint(), fieldName, rangeStr);
                         rangeStr.append(" >");
                         rangeStr.append(range.lowerBoundType()== BoundType.CLOSED?"= ":" ");
-                        appendSargFieldValue(range.lowerEndpoint(), rangeStr);
+                        appendSargFieldValue(range.lowerEndpoint(), sqlTypeName, rangeStr);
                         rangeStr.append(" AND ");
                         appendSargFieldName(range.upperEndpoint(), fieldName, rangeStr);
                         rangeStr.append(" <");
                         rangeStr.append(range.upperBoundType()== BoundType.CLOSED?"= ":" ");
-                        appendSargFieldValue(range.upperEndpoint(), rangeStr);
+                        appendSargFieldValue(range.upperEndpoint(), sqlTypeName, rangeStr);
                     });
                     return Optional.of(rangeStr.toString());
                 }
@@ -193,15 +195,16 @@ public class LakeS3Adapter {
             if (isSimpleLiteralColumnValueFilter(left, right)) {
                 fieldName = compileFieldName(left, right);
                 literal = compileFieldValue(right);
+                return Optional.of(String.format("%s %s %s", fieldName, op, literal));
             } else {
                 if (isSimpleLiteralColumnValueFilter(right, left)) {
                     fieldName =  compileFieldName(right, left);
                     literal = compileFieldValue(left);
+                    return Optional.of(String.format("%s %s %s", literal, op, fieldName));
                 } else {
                     return Optional.empty();
                 }
             }
-            return Optional.of(String.format("%s %s %s", fieldName, op, literal));
         }
     }
 
@@ -221,9 +224,10 @@ public class LakeS3Adapter {
     private String compileFieldName(RexNode field, RexNode value) {
         int index = ((RexInputRef) field).getIndex();
         String fieldRef = isCSVInputFormat() ? ("_" + (index + 1)) : ("s." + spec.getColumns().get(index).label);
+        boolean isDateTime = spec.getColumns().get(index).datatype == TypeSpec.DATETIME;
         RexLiteral literal = (RexLiteral) value;
         if (SqlTypeName.DATETIME_TYPES.contains(literal.getTypeName())){
-            return "TO_TIMESTAMP(" + fieldRef + ", '" + formatCSV.getDatePattern() + "')";
+            return "TO_TIMESTAMP(" + fieldRef + ", '" + (isDateTime? formatCSV.getDatetimePattern():formatCSV.getDatePattern()) + "')";
         } else if (literal.getType().toString().startsWith("DECIMAL")){
             return "CAST (" + fieldRef + " AS DECIMAL)";
         }  else if (literal.getType().toString().equals("INTEGER")){
@@ -237,6 +241,8 @@ public class LakeS3Adapter {
         RexLiteral literal = (RexLiteral) value;
         if (SqlTypeName.STRING_TYPES.contains(literal.getTypeName())) {
             return '\'' + literal.getValue2().toString() + '\'';
+        } else if (SqlTypeName.DATE.equals(literal.getTypeName())){
+            return "TO_TIMESTAMP('" + literal.toString().replaceAll("/","-")+"', 'y-M-d')";
         } else if (SqlTypeName.DATETIME_TYPES.contains(literal.getTypeName())){
             return "TO_TIMESTAMP('" + literal.toString().replaceAll("/","-")+"', 'y-M-d H:m:ss')";
         }
@@ -258,21 +264,24 @@ public class LakeS3Adapter {
     }
 
     private void appendSargFieldName(Comparable endpoint, String fieldName, StringBuffer rangeStr) {
-        if (endpoint instanceof TimestampString) {
+        if (endpoint instanceof TimestampString){
+            rangeStr.append("TO_TIMESTAMP(" + fieldName + ", '" + formatCSV.getDatetimePattern() + "')");
+        } else if (endpoint instanceof DateString) {
             rangeStr.append("TO_TIMESTAMP(" + fieldName + ", '" + formatCSV.getDatePattern() + "')");
         } else {
             rangeStr.append(fieldName);
         }
     }
 
-    private void appendSargFieldValue(Comparable endpoint, StringBuffer rangeStr) {
-        if (endpoint instanceof TimestampString) {
+    private void appendSargFieldValue(Comparable endpoint, SqlTypeName sqlTypeName, StringBuffer rangeStr) {
+        if (endpoint instanceof TimestampString){
             rangeStr.append("TO_TIMESTAMP('" + endpoint + "', 'y-M-d H:m:ss')");
+        } else if(endpoint instanceof DateString) {
+            rangeStr.append("TO_TIMESTAMP('" + endpoint + "', 'y-M-d')");
         } else {
-            rangeStr.append(endpoint);
+            rangeStr.append(CalciteUtils.sargPointValue(endpoint, sqlTypeName));
         }
     }
-
 
     public RowConverter getRowConverter() {
         TypeSpec[] projectedTypes = IntStream.of(projects).boxed()
